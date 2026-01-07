@@ -9,7 +9,7 @@ from transformers import (
     WhisperProcessor
 )
 from typing import Optional
-from datasets import DatasetDict
+from datasets import DatasetDict, Dataset
 
 from src.utils.logger import setup_logger
 
@@ -191,6 +191,30 @@ class WhisperASRPipeline:
         
         logger.info("ASR pipeline setup complete")
         return processor
+    
+    def prepare_dataset(self, dataset: DatasetDict) -> DatasetDict:
+        """
+        Prepare dataset by applying feature extraction and tokenization.
+        
+        Args:
+            dataset: DatasetDict to prepare
+        Returns:
+            Prepared DatasetDict
+        """
+        dataset = dataset.map(self._prepare_data, remove_columns=dataset.column_names["train"])
+        return dataset
+    
+    def _prepare_data(self, batch: Dataset) -> Dataset:
+        # load and resample audio data from 48 to 16kHz
+        audio = batch["audio"]
+
+        # compute log-Mel input features from input audio array 
+        batch["input_features"] = self.feature_extractor(audio["array"], sampling_rate=audio["sampling_rate"]).input_features[0]
+
+        # encode target text to label ids 
+        batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
+        return batch
+
     
     def get_processor(self) -> Optional[WhisperProcessor]:
         """Get the processor if created."""

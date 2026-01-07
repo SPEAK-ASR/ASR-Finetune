@@ -52,7 +52,6 @@ def main():
     preprocessor = DataPreprocessor(dataset=dataset)
     columns_to_remove = ["speaker_gender"]
     processed_dataset = preprocessor.remove_columns(columns_to_remove)
-    logger.info("Removed unnecessary columns from dataset.")
 
     # Setup ASR pipeline
     logger.info("Step 4: Setting up ASR pipeline...")
@@ -63,6 +62,8 @@ def main():
     )
     processor = asr_pipeline.setup_pipeline(dataset=processed_dataset)
     logger.info("ASR pipeline setup complete.")
+    prepared_dataset = asr_pipeline.prepare_dataset(processed_dataset)
+    logger.info(f"Dataset preparation complete.\nPrepared dataset: {prepared_dataset['train'][0]}")
 
 if __name__ == "__main__":
     main()
