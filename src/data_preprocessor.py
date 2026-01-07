@@ -3,7 +3,7 @@ Data preprocessing for Whisper fine-tuning.
 Handles dataset transformations and column operations.
 """
 
-from datasets import DatasetDict, Dataset
+from datasets import DatasetDict, Dataset, Audio
 from typing import List, Optional, Union
 
 from src.utils.logger import setup_logger
@@ -66,6 +66,22 @@ class DataPreprocessor:
         
         logger.info("Column removal complete")
         return self.dataset
+    
+    def set_sample_rate(self, audio_field_label: str, sample_rate: int) -> None:
+        if self.dataset is None:
+            logger.warning("Dataset not loaded. Call load_datasets() first.")
+            return
+        
+        try:
+            logger.info(f"Setting sample rate to {sample_rate}")
+            self.dataset = self.dataset.cast_column(
+                audio_field_label,
+                Audio(sampling_rate=sample_rate)
+            )
+            logger.info("Sample rate set successfully.")
+        except Exception as e:
+            logger.error(f"Failed to set sample rate: {str(e)}")
+            raise
     
     def get_dataset(self) -> Optional[DatasetDict]:
         """
