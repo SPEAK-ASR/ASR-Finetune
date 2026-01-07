@@ -4,7 +4,7 @@ Handles loading and preparation of audio datasets from HuggingFace.
 """
 
 from datasets import load_dataset, DatasetDict
-from typing import Optional, Dict, Any
+from typing import Optional
 
 from src.utils.logger import setup_logger
 
@@ -91,7 +91,8 @@ class WhisperDataLoader:
             logger.info(f"  {split_name}: {len(split_data)} samples")
             logger.info(f"  Features: {list(split_data.features.keys())}")
         logger.info("=" * 50)
-    
+
+
     def get_dataset(self) -> Optional[DatasetDict]:
         """
         Get the loaded dataset.
@@ -100,30 +101,3 @@ class WhisperDataLoader:
             DatasetDict if loaded, None otherwise
         """
         return self.dataset
-    
-    def get_sample(self, split: str = "train", index: int = 0) -> Optional[Dict[str, Any]]:
-        """
-        Get a single sample from the dataset.
-        
-        Args:
-            split: Dataset split to sample from
-            index: Index of the sample
-            
-        Returns:
-            Sample dictionary or None if dataset not loaded
-        """
-        if self.dataset is None:
-            logger.warning("Dataset not loaded. Call load_datasets() first.")
-            return None
-        
-        if split not in self.dataset:
-            logger.error(f"Split '{split}' not found in dataset")
-            return None
-        
-        try:
-            sample = self.dataset[split][index]
-            logger.debug(f"Retrieved sample {index} from {split} split")
-            return sample
-        except IndexError:
-            logger.error(f"Index {index} out of range for {split} split")
-            return None
