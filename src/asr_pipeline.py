@@ -10,6 +10,7 @@ from transformers import (
 )
 from typing import Optional
 from datasets import DatasetDict, Dataset
+from pympler import asizeof
 
 from src.utils.logger import setup_logger
 
@@ -201,7 +202,19 @@ class WhisperASRPipeline:
         Returns:
             Prepared DatasetDict
         """
+        # Measure size of the dataset object
+        total_size = asizeof.asizeof(dataset)
+        size_mb = total_size / (1024 * 1024)
+
+        logger.info(f"Total dataset size (before): {total_size} bytes ({size_mb:.2f} MB)")
+
         dataset = dataset.map(self._prepare_data, remove_columns=dataset.column_names["train"])
+
+        # Get total size including all nested objects
+        total_size = asizeof.asizeof(dataset)
+        size_mb = total_size / (1024 * 1024)
+        logger.info(f"Total dataset size (after): {total_size} bytes ({size_mb:.2f} MB)")
+
         return dataset
     
     def _prepare_data(self, batch: Dataset) -> Dataset:
@@ -212,7 +225,7 @@ class WhisperASRPipeline:
         batch["input_features"] = self.feature_extractor(audio["array"], sampling_rate=audio["sampling_rate"]).input_features[0]
 
         # encode target text to label ids 
-        batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
+        batch["labels"] = self.tokenizer(batch["text"]).input_ids
         return batch
 
     

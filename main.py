@@ -63,7 +63,7 @@ def main():
     processor = asr_pipeline.setup_pipeline(dataset=processed_dataset)
     logger.info("ASR pipeline setup complete.")
     prepared_dataset = asr_pipeline.prepare_dataset(processed_dataset)
-    logger.info(f"Dataset preparation complete.\nPrepared dataset: {prepared_dataset['train'][0]}")
+    logger.info(f"Dataset preparation complete.")
 
 if __name__ == "__main__":
     main()
