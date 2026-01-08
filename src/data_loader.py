@@ -78,6 +78,7 @@ class WhisperDataLoader:
         except Exception as e:
             logger.error(f"Failed to load dataset: {str(e)}")
             raise
+        
     
     def _log_dataset_info(self) -> None:
         """Log detailed information about the loaded dataset."""

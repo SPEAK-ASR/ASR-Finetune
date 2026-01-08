@@ -6,3 +6,5 @@ jiwer
 tensorboard
 gradio
 python-dotenv
+peft
+mlflow

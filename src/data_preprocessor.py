@@ -5,7 +5,9 @@ Handles dataset transformations and column operations.
 
 from datasets import DatasetDict, Dataset, Audio
 from typing import List, Optional, Union
+from pympler import asizeof
 
+from src.config.config import CONFIG
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -91,3 +93,112 @@ class DataPreprocessor:
             DatasetDict or None if not set
         """
         return self.dataset
+    
+    def prepare_dataset(
+        self,
+        dataset: DatasetDict,
+        feature_extractor_component,
+        tokenizer_component,
+        cache_file_name: str = "cached_features.arrow"
+    ) -> DatasetDict:
+        """
+        Prepare dataset by applying feature extraction and tokenization.
+        
+        Args:
+            dataset: DatasetDict to prepare
+            feature_extractor_component: Feature extractor component
+            tokenizer_component: Tokenizer component
+            cache_file_name: Name for cache file
+            
+        Returns:
+            Prepared DatasetDict
+        """
+        dataset = dataset.filter(
+            self._check_token_length,
+            input_columns=["text"],
+            load_from_cache_file=False,
+            desc="Filtering long samples"
+        )
+
+        logger.info(f"Dataset size (before): ({self._measure_size(dataset):.2f} MB)")
+
+        prepared_dataset = dataset.map(
+            lambda batch: self._prepare_data(
+                batch,
+                feature_extractor_component,
+                tokenizer_component
+            ),
+            remove_columns=dataset.column_names["train"],
+            cache_file_name=cache_file_name
+        )
+
+        logger.info(f"Dataset size (after): ({self._measure_size(prepared_dataset):.2f} MB)")
+
+        return prepared_dataset
+    
+    def _measure_size(self, obj) -> float:
+        """Measure size of object in MB."""
+        total_size = asizeof.asizeof(obj)
+        size_mb = total_size / (1024 * 1024)
+        return size_mb
+    
+    def _check_token_length(self, text: str) -> bool:
+        """
+        Check if the text will produce a valid token length.
+        
+        Args:
+            text: Dictionary containing 'text' key
+            
+        Returns:
+            True if token length is acceptable, False otherwise
+        """
+        # Tokenize to check length
+        token_ids = self.tokenizer(text).input_ids
+        token_length = len(token_ids)
+        
+        # Return True to keep the sample, False to filter it out
+        if token_length > CONFIG.model.max_token_length:
+            logger.warning(
+                f"⚠️  Filtering out sample with {token_length} tokens (max: {CONFIG.model.max_token_length})"
+                f" Text: {text}"
+            )
+            return False
+        
+        return True
+    
+    def _prepare_data(
+        self,
+        batch: Dataset,
+        feature_extractor_component,
+        tokenizer_component
+    ) -> Dataset:
+        """
+        Prepare individual batch: extract features and tokenize text.
+        
+        Args:
+            batch: Batch to prepare
+            feature_extractor_component: Feature extractor component
+            tokenizer_component: Tokenizer component
+            
+        Returns:
+            Prepared batch
+        """
+        # Load and resample audio data from 48 to 16kHz
+        audio = batch["audio"]
+
+        # Compute log-Mel input features from input audio array
+        feature_extractor = feature_extractor_component.get()
+        batch["input_features"] = feature_extractor(
+            audio["array"],
+            sampling_rate=audio["sampling_rate"]
+        ).input_features[0]
+
+        # Encode target text to label ids
+        tokenizer = tokenizer_component.get()
+        batch["labels"] = tokenizer(batch["text"]).input_ids
+
+        if len(batch["labels"]) > CONFIG.model.max_token_length:
+            logger.warning("tokenized label length exceeds max_token_length")
+            logger.warning("need to remove this sample from dataset")
+        
+        return batch

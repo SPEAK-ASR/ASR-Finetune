@@ -1,17 +1,21 @@
 """
-ASR Pipeline components for Whisper fine-tuning.
-Handles feature extraction, tokenization, and processor creation.
+ASR Pipeline Facade for Whisper fine-tuning.
+Provides a simplified interface for the complete fine-tuning workflow.
 """
 
-from transformers import (
-    WhisperFeatureExtractor,
-    WhisperTokenizer,
-    WhisperProcessor
-)
 from typing import Optional
 from datasets import DatasetDict, Dataset
-from pympler import asizeof
 
+from src.components.feature_extractor import FeatureExtractorComponent
+from src.components.tokenizer import TokenizerComponent
+from src.components.processor import ProcessorComponent
+from src.components.model import ModelComponent
+from src.components.data_collator import DataCollatorComponent
+from src.components.trainer import create_trainer, ASRTrainerConfig
+from src.components.evaluator import ASREvaluator
+from src.config.lora_config import LoRAConfig
+from src.data_preprocessor import DataPreprocessor
+from src.config.config import CONFIG
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -19,8 +23,8 @@ logger = setup_logger(__name__)
 
 class WhisperASRPipeline:
     """
-    Manages the ASR pipeline components for Whisper fine-tuning.
-    Handles feature extractor, tokenizer, and processor initialization.
+    Facade for Whisper ASR fine-tuning pipeline.
+    Simplifies the complex workflow into easy-to-use high-level methods.
     """
     
     def __init__(
@@ -30,7 +34,7 @@ class WhisperASRPipeline:
         task: str = "transcribe"
     ):
         """
-        Initialize the ASR pipeline.
+        Initialize the ASR pipeline facade.
         
         Args:
             model_name: Pretrained Whisper model name
@@ -40,203 +44,225 @@ class WhisperASRPipeline:
         self.model_name = model_name
         self.language = language
         self.task = task
+        self._initialized = False
         
-        self.feature_extractor: Optional[WhisperFeatureExtractor] = None
-        self.tokenizer: Optional[WhisperTokenizer] = None
-        self.processor: Optional[WhisperProcessor] = None
+        # Initialize component wrappers (internal complexity hidden)
+        self._feature_extractor = FeatureExtractorComponent(model_name)
+        self._tokenizer = TokenizerComponent(model_name, language, task)
+        self._processor = ProcessorComponent(model_name, language, task)
+        self._model = ModelComponent(model_name, language, task)
+        self._data_collator = DataCollatorComponent()
+        self._preprocessor = DataPreprocessor()
         
-        logger.info(
-            f"ASR Pipeline initialized - Model: {model_name}, "
-            f"Language: {language}, Task: {task}"
-        )
+        logger.info(f"Pipeline created - Model: {model_name}, Language: {language}")
     
-    def _load_feature_extractor(self) -> WhisperFeatureExtractor:
+    def initialize(self, dataset: Optional[DatasetDict] = None):
         """
-        Load the Whisper feature extractor.
-        
-        Returns:
-            WhisperFeatureExtractor instance
-        """
-        logger.info(f"Loading feature extractor from {self.model_name}...")
-        
-        try:
-            self.feature_extractor = WhisperFeatureExtractor.from_pretrained(
-                self.model_name
-            )
-            logger.info("Feature extractor loaded successfully")
-            return self.feature_extractor
-            
-        except Exception as e:
-            logger.error(f"Failed to load feature extractor: {str(e)}")
-            raise
-    
-    def _load_tokenizer(self) -> WhisperTokenizer:
-        """
-        Load the Whisper tokenizer with language and task configuration.
-        
-        Returns:
-            WhisperTokenizer instance
-        """
-        logger.info(
-            f"Loading tokenizer from {self.model_name} "
-            f"(Language: {self.language}, Task: {self.task})..."
-        )
-        
-        try:
-            self.tokenizer = WhisperTokenizer.from_pretrained(
-                self.model_name,
-                language=self.language,
-                task=self.task
-            )
-            logger.info("Tokenizer loaded successfully")
-            return self.tokenizer
-            
-        except Exception as e:
-            logger.error(f"Failed to load tokenizer: {str(e)}")
-            raise
-    
-    def verify_tokenizer(self, dataset: DatasetDict, split: str = "train", index: int = 0) -> bool:
-        """
-        Verify tokenizer by encoding and decoding a sample from the dataset.
-        
-        Args:
-            dataset: Dataset containing text samples
-            split: Dataset split to use for verification
-            index: Index of sample to verify
-            
-        Returns:
-            True if tokenizer correctly encodes/decodes, False otherwise
-        """
-        if self.tokenizer is None:
-            logger.error("Tokenizer not loaded. Call load_tokenizer() first.")
-            return False
-        
-        try:
-            # Get sample text
-            input_str = dataset[split][index]["text"]
-            logger.info(f"Verifying tokenizer with sample from {split}[{index}]")
-            
-            # Encode and decode
-            labels = self.tokenizer(input_str).input_ids
-            decoded_with_special = self.tokenizer.decode(labels, skip_special_tokens=False)
-            decoded_str = self.tokenizer.decode(labels, skip_special_tokens=True)
-            
-            # Log results
-            logger.info(f"Input:                 {input_str}")
-            logger.info(f"Decoded w/ special:    {decoded_with_special}")
-            logger.info(f"Decoded w/out special: {decoded_str}")
-            
-            are_equal = input_str == decoded_str
-            logger.info(f"Are equal:             {are_equal}")
-            
-            if are_equal:
-                logger.info("✓ Tokenizer verification successful")
-            else:
-                logger.warning("✗ Tokenizer verification failed - decoded text differs from input")
-            
-            return are_equal
-            
-        except Exception as e:
-            logger.error(f"Tokenizer verification failed: {str(e)}")
-            return False
-    
-    def _create_processor(self) -> WhisperProcessor:
-        """
-        Create a WhisperProcessor combining feature extractor and tokenizer.
-        
-        Returns:
-            WhisperProcessor instance
-        """
-        logger.info(
-            f"Creating Whisper processor from {self.model_name} "
-            f"(Language: {self.language}, Task: {self.task})..."
-        )
-        
-        try:
-            self.processor = WhisperProcessor.from_pretrained(
-                self.model_name,
-                language=self.language,
-                task=self.task
-            )
-            logger.info("Processor created successfully")
-            return self.processor
-            
-        except Exception as e:
-            logger.error(f"Failed to create processor: {str(e)}")
-            raise
-    
-    def setup_pipeline(self, dataset: Optional[DatasetDict] = None) -> WhisperProcessor:
-        """
-        Setup complete pipeline: load components and optionally verify tokenizer.
+        Initialize all pipeline components. Call this before training.
         
         Args:
             dataset: Optional dataset for tokenizer verification
             
         Returns:
-            WhisperProcessor instance
+            Self for method chaining
         """
-        logger.info("Setting up complete ASR pipeline...")
+        if self._initialized:
+            logger.warning("Pipeline already initialized")
+            return self
         
-        # Load feature extractor
-        self._load_feature_extractor()
+        logger.info("Initializing pipeline components...")
         
-        # Load tokenizer
-        self._load_tokenizer()
+        self._feature_extractor.load()
+        self._tokenizer.load()
         
-        # Verify tokenizer if dataset provided
         if dataset:
-            self.verify_tokenizer(dataset)
+            self._tokenizer.verify(dataset)
         
-        # Create processor
-        processor = self._create_processor()
+        self._processor.create()
         
-        logger.info("ASR pipeline setup complete")
-        return processor
+        self._initialized = True
+        logger.info("Pipeline initialization complete")
+        return self
     
-    def prepare_dataset(self, dataset: DatasetDict) -> DatasetDict:
+    def prepare_data(self, dataset: DatasetDict) -> DatasetDict:
         """
-        Prepare dataset by applying feature extraction and tokenization.
+        Prepare dataset for training (feature extraction + tokenization).
         
         Args:
-            dataset: DatasetDict to prepare
+            dataset: Raw dataset
+            
         Returns:
-            Prepared DatasetDict
+            Prepared dataset ready for training
         """
-        # Measure size of the dataset object
-        total_size = asizeof.asizeof(dataset)
-        size_mb = total_size / (1024 * 1024)
-
-        logger.info(f"Total dataset size (before): {total_size} bytes ({size_mb:.2f} MB)")
-
-        dataset = dataset.map(self._prepare_data, remove_columns=dataset.column_names["train"])
-
-        # Get total size including all nested objects
-        total_size = asizeof.asizeof(dataset)
-        size_mb = total_size / (1024 * 1024)
-        logger.info(f"Total dataset size (after): {total_size} bytes ({size_mb:.2f} MB)")
-
-        return dataset
+        self._ensure_initialized()
+        logger.info("Preparing dataset...")
+        
+        prepared = self._preprocessor.prepare_dataset(
+            dataset=dataset,
+            feature_extractor_component=self._feature_extractor,
+            tokenizer_component=self._tokenizer
+        )
+        
+        logger.info("Dataset preparation complete")
+        return prepared
     
-    def _prepare_data(self, batch: Dataset) -> Dataset:
-        # load and resample audio data from 48 to 16kHz
-        audio = batch["audio"]
+    def finetune(self, dataset: DatasetDict) -> dict:
+        """
+        High-level method to finetune the model with sensible defaults.
 
-        # compute log-Mel input features from input audio array 
-        batch["input_features"] = self.feature_extractor(audio["array"], sampling_rate=audio["sampling_rate"]).input_features[0]
+        Args:
+            dataset: Prepared dataset for training
+            
+        Returns:
+            Training results
+        """
+        self._ensure_initialized()
+        logger.info("Starting fine-tuning workflow...")
+        
+        # Configure training
+        training_config = ASRTrainerConfig(
+            run_name=CONFIG.training.run_name,
+            output_dir=CONFIG.training.output_dir,
+            num_train_epochs=CONFIG.training.num_train_epochs,
+            max_steps=CONFIG.training.max_steps,
+            per_device_train_batch_size=CONFIG.training.per_device_train_batch_size,
+            per_device_eval_batch_size=CONFIG.training.per_device_eval_batch_size,
+            gradient_accumulation_steps=CONFIG.training.gradient_accumulation_steps,
+            auto_find_batch_size=CONFIG.training.auto_find_batch_size,
+            learning_rate=CONFIG.training.learning_rate,
+            warmup_steps=CONFIG.training.warmup_steps,
+            lr_scheduler_type=CONFIG.training.lr_scheduler_type,
+            gradient_checkpointing=CONFIG.training.gradient_checkpointing,
+            fp16=CONFIG.training.fp16,
+            bf16=CONFIG.training.bf16,
+            optim=CONFIG.training.optim,
+            eval_strategy=CONFIG.training.eval_strategy,
+            eval_steps=CONFIG.training.eval_steps,
+            predict_with_generate=CONFIG.training.predict_with_generate,
+            save_strategy=CONFIG.training.save_strategy,
+            save_steps=CONFIG.training.save_steps,
+            load_best_model_at_end=CONFIG.training.load_best_model_at_end,
+            metric_for_best_model=CONFIG.training.metric_for_best_model,
+            greater_is_better=CONFIG.training.greater_is_better,
+            logging_strategy=CONFIG.training.logging_strategy,
+            logging_steps=CONFIG.training.logging_steps,
+            logging_first_step=CONFIG.training.logging_first_step,
+            report_to=CONFIG.training.report_to,
+            push_to_hub=CONFIG.training.push_to_hub,
+            hub_strategy=CONFIG.training.hub_strategy,
+            neftune_noise_alpha=CONFIG.training.neftune_noise_alpha,
+            weight_decay=CONFIG.training.weight_decay,
+        )
+        
+        # Configure LoRA if enabled
+        lora_config = None
+        lora_config = LoRAConfig(
+            r=CONFIG.lora.r,
+            lora_alpha=CONFIG.lora.lora_alpha,
+            target_modules=CONFIG.lora.target_modules,
+            lora_dropout=CONFIG.lora.lora_dropout,
+            bias=CONFIG.lora.bias,
+            task_type=CONFIG.lora.task_type,
+        )
+        
+        # Setup data collator
+        self._setup_data_collator()
+        
+        # Create and run trainer
+        trainer = self._create_trainer(
+            train_dataset=dataset["train"],
+            eval_dataset=dataset["test"],
+            training_config=training_config,
+            lora_config=lora_config,
+        )
+        
+        logger.info("Beginning training...")
+        results = trainer.train()
+        
+        logger.info("Fine-tuning complete!")
 
-        # encode target text to label ids 
-        batch["labels"] = self.tokenizer(batch["text"]).input_ids
-        return batch
+        kwargs = {
+            "dataset_tags": CONFIG.dataset.dataset_name,
+            "dataset": CONFIG.huggingface.pretty_name,  # a 'pretty' name for the training dataset
+            "dataset_args": CONFIG.huggingface.dataset_args,
+            "language": "si",
+            "model_name": CONFIG.huggingface.model_name,  # a 'pretty' name for your model
+            "finetuned_from": CONFIG.model.model_name,
+            "tasks": CONFIG.huggingface.tasks,
+        }
+        trainer.push_to_hub(**kwargs)
+        logger.info("Model pushed to HuggingFace Hub")
 
+        return results
     
-    def get_processor(self) -> Optional[WhisperProcessor]:
-        """Get the processor if created."""
-        return self.processor
+    def _setup_data_collator(self):
+        """Internal method to setup data collator."""
+        processor = self._processor.get()
+        model = self._model.get()
+        self._data_collator.create(
+            processor=processor,
+            decoder_start_token_id=model.config.decoder_start_token_id
+        )
     
-    def get_tokenizer(self) -> Optional[WhisperTokenizer]:
-        """Get the tokenizer if loaded."""
-        return self.tokenizer
+    def _create_trainer(
+        self,
+        train_dataset: Dataset,
+        eval_dataset: Dataset,
+        training_config: ASRTrainerConfig,
+        lora_config: Optional[LoRAConfig] = None,
+    ):
+        """Internal method to create trainer."""
+        model = self._model.get()
+        processor = self._processor.get()
+        data_collator = self._data_collator.get()
+        tokenizer = self._tokenizer.get()
+        
+        evaluator = ASREvaluator(tokenizer)
+        
+        return create_trainer(
+            model=model,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            data_collator=data_collator,
+            compute_metrics=evaluator.compute_metrics,
+            processor=processor,
+            config=training_config,
+            lora_config=lora_config,
+        )
     
-    def get_feature_extractor(self) -> Optional[WhisperFeatureExtractor]:
-        """Get the feature extractor if loaded."""
-        return self.feature_extractor
+    def _ensure_initialized(self):
+        """Ensure pipeline is initialized before operations."""
+        if not self._initialized:
+            logger.warning("Pipeline not initialized. Calling initialize()...")
+            self.initialize()
+    
+    # Legacy methods for backward compatibility and advanced usage
+    
+    def create_data_collator(self):
+        """Create data collator (legacy method)."""
+        self._setup_data_collator()
+        return self._data_collator.get()
+    
+    def prepare_dataset(self, dataset: DatasetDict) -> DatasetDict:
+        """Prepare dataset (legacy method)."""
+        return self.prepare_data(dataset)
+    
+    def get_processor(self):
+        """Get processor component."""
+        return self._processor.get()
+    
+    def get_tokenizer(self):
+        """Get tokenizer component."""
+        return self._tokenizer.get()
+    
+    def get_feature_extractor(self):
+        """Get feature extractor component."""
+        return self._feature_extractor.get()
+    
+    def get_model(self):
+        """Get model component."""
+        return self._model.get()
+    
+    def get_data_collator(self):
+        """Get data collator component."""
+        return self._data_collator.get()
