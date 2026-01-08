@@ -13,9 +13,12 @@ class DatasetConfig:
     """Configuration for dataset loading and preprocessing."""
     
     # Dataset source
-    dataset_name: str = "SPEAK-ASR/youtube-sinhla-asr"
-    train_split: str = "train[:21000]+validation[:3000]"
-    test_split: str = "test[:6000]"
+    # dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr"
+    # train_split: str = "train[:21000]+validation[:3000]"
+    # test_split: str = "test[:6000]"
+    dataset_name: str = "SPEAK-ASR/youtube-sinhala-asr"
+    train_split: str = "train+validation"
+    test_split: str = "test"
     use_auth_token: bool = True
     
     # Audio preprocessing
@@ -97,12 +100,12 @@ class TrainingConfig:
 @dataclass
 class LoRAConfig:
     """Configuration for LoRA (Low-Rank Adaptation)."""
-    r: int = 8,
-    lora_alpha: int = 16,
+    r: int = 8
+    lora_alpha: int = 16
     target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
-    lora_dropout: float = 0.1,
-    bias: str = "none",
-    task_type: str = "SEQ_2_SEQ_LM",
+    lora_dropout: float = 0.1
+    bias: str = "none"
+    task_type: str = "SEQ_2_SEQ_LM"
 
 
 @dataclass
@@ -114,7 +117,7 @@ class HuggingFaceConfig:
     hf_token_env_var: str = "HF_TOKEN"
     pretty_name: str = "Whisper Small - Sinhala ASR Fine-Tuned"
     dataset_args: str = "config: si, split: test"
-    model_name: str = "Whisper Small Si - SPEAK"
+    model_name: str = "speak-whisper-small-si"
     tasks: str = "automatic-speech-recognition"
 
 

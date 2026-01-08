@@ -99,7 +99,6 @@ class DataPreprocessor:
         dataset: DatasetDict,
         feature_extractor_component,
         tokenizer_component,
-        cache_file_name: str = "cached_features.arrow"
     ) -> DatasetDict:
         """
         Prepare dataset by applying feature extraction and tokenization.
@@ -108,16 +107,17 @@ class DataPreprocessor:
             dataset: DatasetDict to prepare
             feature_extractor_component: Feature extractor component
             tokenizer_component: Tokenizer component
-            cache_file_name: Name for cache file
             
         Returns:
             Prepared DatasetDict
         """
+        self.tokenizer = tokenizer_component.get()
+
         dataset = dataset.filter(
             self._check_token_length,
             input_columns=["text"],
-            load_from_cache_file=False,
-            desc="Filtering long samples"
+            load_from_cache_file=True,
+            desc="Filtering long samples",
         )
 
         logger.info(f"Dataset size (before): ({self._measure_size(dataset):.2f} MB)")
@@ -129,7 +129,6 @@ class DataPreprocessor:
                 tokenizer_component
             ),
             remove_columns=dataset.column_names["train"],
-            cache_file_name=cache_file_name
         )
 
         logger.info(f"Dataset size (after): ({self._measure_size(prepared_dataset):.2f} MB)")
@@ -159,9 +158,7 @@ class DataPreprocessor:
         # Return True to keep the sample, False to filter it out
         if token_length > CONFIG.model.max_token_length:
             logger.warning(
-                f"⚠️  Filtering out sample with {token_length} tokens (max: {CONFIG.model.max_token_length})"
-                f" Text: {text}"
-            )
+                f"⚠️  Filtering out sample with {token_length} tokens (max: {CONFIG.model.max_token_length})")
             return False
         
         return True
