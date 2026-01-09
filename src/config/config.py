@@ -4,13 +4,16 @@ This module provides a comprehensive configuration system for all constants and 
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Literal, Optional, List
 import os
 
 
 @dataclass
 class DatasetConfig:
     """Configuration for dataset loading and preprocessing."""
+
+    # task can be either prepare_dataset or finetune_asr_model
+    task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
     
     # Dataset source
     # dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr"

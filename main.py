@@ -10,6 +10,8 @@ logger.info("Loading environment variables...")
 dotenv.load_dotenv()
 logger.info("Importing dependencies...")
 
+from dataset import DatasetDict
+
 from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
@@ -18,71 +20,103 @@ from src.config.config import CONFIG
 
 logger.info("All dependencies loaded successfully")
 
-
-def main():
-    """Main execution function - highly readable thanks to facade pattern."""
-    logger.info("=" * 60)
-    logger.info("Whisper Fine-Tuning for Sinhala Language")
-    logger.info("=" * 60)
+def _create_prepared_dataset(token: str, dataset: DatasetDict) -> None:
+    logger.info("Starting dataset preparation process...")
     
-    # Step 1: Authenticate with HuggingFace Hub
-    logger.info("Step 1: Authenticating with HuggingFace Hub...")
-    token = HuggingFaceAuthenticator.get_token_from_env()
-    authenticator = HuggingFaceAuthenticator(token=token)
-    
-    if not authenticator.authenticate():
-        logger.error("Authentication failed. Exiting.")
-        return
-    
-    # Step 2: Load dataset
-    logger.info("Step 2: Loading Sinhala ASR dataset...")
-    data_loader = WhisperDataLoader(
-        dataset_name=CONFIG.dataset.dataset_name,
-        token=CONFIG.dataset.use_auth_token
-    )
-
-    logger.info(
-        f"split train: {CONFIG.dataset.train_split}"
-        f"split test: {CONFIG.dataset.test_split}"
-    )
-    dataset = data_loader.load_datasets(
-        train_split=CONFIG.dataset.train_split,
-        test_split=CONFIG.dataset.test_split
-    )
-
-    logger.info(f"Dataset loaded: {dataset}")
-    
-    # Step 3: Preprocess dataset (remove unnecessary columns)
-    logger.info("Step 3: Preprocessing dataset...")
+    logger.info("Initializing data preprocessor...")
     preprocessor = DataPreprocessor(dataset=dataset)
     preprocessor.set_sample_rate("audio", CONFIG.dataset.sample_rate)
+    logger.info(f"Sample rate set to: {CONFIG.dataset.sample_rate} Hz")
     dataset = preprocessor.get_dataset()
-    logger.info("Dataset preprocessing complete")
-    
-    # Step 4: Initialize ASR pipeline
-    logger.info("Step 4: Initializing ASR pipeline...")
+    logger.info("Preprocessing completed")
+
+    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.model_name})...")
     pipeline = WhisperASRPipeline(
         model_name=CONFIG.model.model_name,
         language=CONFIG.model.language,
         task=CONFIG.model.task
     )
     pipeline.initialize(dataset)
-    logger.info("Pipeline initialization complete")
-    
-    # Step 5: Prepare data for training
-    logger.info("Step 5: Preparing dataset for training...")
+    logger.info("Pipeline initialized successfully")
+
+    logger.info("Preparing dataset for fine-tuning...")
     prepared_dataset = pipeline.prepare_data(dataset)
-    logger.info("Dataset preparation complete")
+    logger.info("Dataset preparation completed")
+
+    repo_name = f"{CONFIG.dataset.dataset_name}-preprocessed"
+    logger.info(f"Pushing prepared dataset to Hub: {repo_name}")
+    prepared_dataset.push_to_hub(
+        repo_name,
+        token=token,
+        private=False,
+    )
+    logger.info(f"Dataset successfully pushed to Hub: {repo_name}")
+
+def _finetune_asr_model(token: str, dataset: DatasetDict) -> None:
+    logger.info("Starting model fine-tuning process...")
+
+    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.model_name})...")
+    pipeline = WhisperASRPipeline(
+        model_name=CONFIG.model.model_name,
+        language=CONFIG.model.language,
+        task=CONFIG.model.task
+    )
+    logger.info(f"Language: {CONFIG.model.language} | Task: {CONFIG.model.task}")
+    pipeline.initialize()
+    logger.info("Pipeline initialized successfully")
+
+    logger.info("Starting fine-tuning...")
+    results = pipeline.finetune(dataset)
+    logger.info("Fine-tuning completed")
     
-    # Step 6: Fine-tune the model
-    logger.info("Step 6: Starting fine-tuning...")
-    results = pipeline.finetune(prepared_dataset)
-    
-    # Step 7: Report results
-    logger.info("=" * 60)
-    logger.info("Fine-tuning completed successfully!")
+    logger.info(f"{'=' * 40}")
+    logger.info(f"Training Results:")
     logger.info(f"Final WER: {results.get('eval_wer', 'N/A')}")
-    logger.info("=" * 60)
+    logger.info(f"{'=' * 40}")
+
+
+
+def main():
+    """Main execution function - highly readable thanks to facade pattern."""
+    logger.info(f"{'=' * 60}\nWhisper Fine-Tuning for Sinhala Language\n{'=' * 60}")
+
+    logger.info("Authenticating with HuggingFace...")
+    token = HuggingFaceAuthenticator.get_token_from_env()
+    authenticator = HuggingFaceAuthenticator(token=token)
+    
+    if not authenticator.authenticate():
+        logger.error("Authentication failed. Exiting.")
+        return
+    logger.info("Successfully authenticated with HuggingFace")
+    
+    logger.info(f"Loading dataset: {CONFIG.dataset.dataset_name}")
+    data_loader = WhisperDataLoader(
+        dataset_name=CONFIG.dataset.dataset_name,
+        token=CONFIG.dataset.use_auth_token
+    )
+
+    dataset = data_loader.load_datasets(
+        train_split=CONFIG.dataset.train_split,
+        test_split=CONFIG.dataset.test_split
+    )
+
+    logger.info(f"Dataset loaded successfully")
+    logger.info(f"Train split: {CONFIG.dataset.train_split}")
+    logger.info(f"Test split: {CONFIG.dataset.test_split}")
+    logger.info(f"Dataset structure: {dataset}")
+    
+    logger.info(f"Task selected: {CONFIG.dataset.task}")
+    if CONFIG.dataset.task == "prepare_dataset":
+        _create_prepared_dataset(token, dataset)
+        logger.info("Dataset preparation task completed successfully")
+    elif CONFIG.dataset.task == "finetune_asr_model":
+        _finetune_asr_model(token, dataset)
+        logger.info("Model fine-tuning task completed successfully")
+    else:
+        logger.error(f"Unknown task: {CONFIG.dataset.task}")
+        return
+    
+    logger.info(f"{'=' * 60}\nExecution completed successfully\n{'=' * 60}")
 
 
 if __name__ == "__main__":
