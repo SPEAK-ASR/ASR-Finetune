@@ -119,6 +119,7 @@ class HuggingFaceConfig:
     pretty_name: str = "Whisper Small - Sinhala ASR Fine-Tuned"
     dataset_args: str = "config: si, split: test"
     model_name: str = "speak-whisper-small-si"
+    hub_repo_id: str = "SPEAK-ASR/speak-whisper-small-si"
     tasks: str = "automatic-speech-recognition"
 
 
