@@ -111,15 +111,6 @@ class DataPreprocessor:
         Returns:
             Prepared DatasetDict
         """
-        self.tokenizer = tokenizer_component.get()
-
-        dataset = dataset.filter(
-            self._check_token_length,
-            input_columns=["text"],
-            load_from_cache_file=True,
-            desc="Filtering long samples",
-        )
-
         logger.info(f"Dataset size (before): ({self._measure_size(dataset):.2f} MB)")
 
         prepared_dataset = dataset.map(
@@ -140,28 +131,6 @@ class DataPreprocessor:
         total_size = asizeof.asizeof(obj)
         size_mb = total_size / (1024 * 1024)
         return size_mb
-    
-    def _check_token_length(self, text: str) -> bool:
-        """
-        Check if the text will produce a valid token length.
-        
-        Args:
-            text: Dictionary containing 'text' key
-            
-        Returns:
-            True if token length is acceptable, False otherwise
-        """
-        # Tokenize to check length
-        token_ids = self.tokenizer(text).input_ids
-        token_length = len(token_ids)
-        
-        # Return True to keep the sample, False to filter it out
-        if token_length > CONFIG.model.max_token_length:
-            logger.warning(
-                f"⚠️  Filtering out sample with {token_length} tokens (max: {CONFIG.model.max_token_length})")
-            return False
-        
-        return True
     
     def _prepare_data(
         self,
