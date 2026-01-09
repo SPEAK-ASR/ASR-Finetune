@@ -1,5 +1,5 @@
 datasets[audio]
-transformers
+transformers~=5.0.0rc0
 accelerate
 evaluate
 jiwer
