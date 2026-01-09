@@ -1,4 +1,4 @@
-from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, EarlyStoppingCallback
 from typing import Optional
 from ..config.lora_config import LoRAConfig, apply_lora_to_model
 
@@ -170,7 +170,8 @@ class ASRTrainer:
             eval_dataset=eval_dataset,
             data_collator=data_collator,
             compute_metrics=compute_metrics,
-            tokenizer=tokenizer,
+            processing_class=tokenizer,
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
 
     def train(self):
