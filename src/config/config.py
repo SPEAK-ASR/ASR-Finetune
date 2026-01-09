@@ -53,7 +53,7 @@ class TrainingConfig:
     output_dir: str = "./whisper-small-sinhala"
     
     # Training epochs/steps
-    num_train_epochs: int = 3
+    num_train_epochs: int = 5
     max_steps: int = -1
     
     # Batch sizes
