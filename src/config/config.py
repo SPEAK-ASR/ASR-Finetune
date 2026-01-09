@@ -15,13 +15,16 @@ class DatasetConfig:
     # task can be either prepare_dataset or finetune_asr_model
     task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
     
-    # Dataset source
+    # Dataset before preprocessing
     # dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr"
     # train_split: str = "train[:21000]+validation[:3000]"
     # test_split: str = "test[:6000]"
-    dataset_name: str = "SPEAK-ASR/youtube-sinhala-asr"
-    train_split: str = "train+validation"
+
+    # for finetuning using preprocessed dataset
+    dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr-preprocessed-2"
+    train_split: str = "train"
     test_split: str = "test"
+
     use_auth_token: bool = True
 
     # Audio preprocessing
