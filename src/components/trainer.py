@@ -34,6 +34,7 @@ class ASRTrainerConfig:
         greater_is_better: bool = False,
         push_to_hub: bool = True,
         neftune_noise_alpha: Optional[float] = None,
+        use_cache: bool = False,
         **kwargs
     ):
         """
@@ -66,6 +67,7 @@ class ASRTrainerConfig:
             greater_is_better: Whether a larger metric value is better
             push_to_hub: Push model to Hugging Face Hub
             neftune_noise_alpha: Activate NEFTune noise embeddings for improved fine-tuning (5.0-15.0 recommended, None to disable)
+            use_cache: Whether the model should use the past key/values attentions (if applicable to the model) to speed up decoding
             **kwargs: Additional arguments to pass to Seq2SeqTrainingArguments
         """
         self.run_name = run_name
@@ -94,6 +96,7 @@ class ASRTrainerConfig:
         self.greater_is_better = greater_is_better
         self.push_to_hub = push_to_hub
         self.neftune_noise_alpha = neftune_noise_alpha
+        self.use_cache = use_cache
         self.kwargs = kwargs
 
     def to_training_arguments(self) -> Seq2SeqTrainingArguments:
@@ -130,6 +133,7 @@ class ASRTrainerConfig:
             greater_is_better=self.greater_is_better,
             push_to_hub=self.push_to_hub,
             neftune_noise_alpha=self.neftune_noise_alpha,
+            use_cache=self.use_cache,
             **self.kwargs
         )
 

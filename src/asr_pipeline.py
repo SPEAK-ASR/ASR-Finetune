@@ -152,6 +152,7 @@ class WhisperASRPipeline:
             hub_strategy=CONFIG.training.hub_strategy,
             neftune_noise_alpha=CONFIG.training.neftune_noise_alpha,
             weight_decay=CONFIG.training.weight_decay,
+            use_cache=CONFIG.training.use_cache,
         )
         
         # Configure LoRA if enabled

@@ -63,6 +63,7 @@ class TrainingConfig:
 
     # Optimization
     gradient_checkpointing: bool = True
+    use_cache: bool = False
     fp16: bool = False
     bf16: bool = True
     optim: str = "adamw_torch"
