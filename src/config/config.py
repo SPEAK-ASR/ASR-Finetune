@@ -20,7 +20,7 @@ class DatasetConfig:
     train_split: str = "train+validation"
     test_split: str = "test"
     use_auth_token: bool = True
-    
+
     # Audio preprocessing
     sample_rate: int = 16000
     audio_column: str = "audio"
@@ -60,7 +60,7 @@ class TrainingConfig:
     learning_rate: float = 1e-5
     warmup_steps: int = 100
     lr_scheduler_type: str = "linear"
-    
+
     # Optimization
     gradient_checkpointing: bool = True
     fp16: bool = False

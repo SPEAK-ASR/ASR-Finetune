@@ -226,8 +226,8 @@ def create_trainer(
         ASRTrainer instance
     """
     # Apply LoRA if configuration is provided
-    if lora_config is not None:
-        model = apply_lora_to_model(model, lora_config)
+    # if lora_config is not None:
+    #     model = apply_lora_to_model(model, lora_config)
 
     if training_args is None:
         if config is None:
@@ -241,5 +241,5 @@ def create_trainer(
         eval_dataset=eval_dataset,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        tokenizer=processor.feature_extractor,
+        tokenizer=processor,
     )
