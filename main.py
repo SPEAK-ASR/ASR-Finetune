@@ -10,7 +10,7 @@ logger.info("Loading environment variables...")
 dotenv.load_dotenv()
 logger.info("Importing dependencies...")
 
-from dataset import DatasetDict
+from datasets import DatasetDict
 
 from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
