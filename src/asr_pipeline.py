@@ -226,7 +226,7 @@ class WhisperASRPipeline:
             eval_dataset=eval_dataset,
             data_collator=data_collator,
             compute_metrics=evaluator.compute_metrics,
-            processor=tokenizer,
+            tokenizer=tokenizer,
             config=training_config,
             lora_config=lora_config,
         )

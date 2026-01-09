@@ -207,7 +207,7 @@ def create_trainer(
     eval_dataset,
     data_collator,
     compute_metrics,
-    processor,
+    tokenizer,
     config: Optional[ASRTrainerConfig] = None,
     training_args: Optional[Seq2SeqTrainingArguments] = None,
     lora_config: Optional[LoRAConfig] = None,
@@ -221,7 +221,7 @@ def create_trainer(
         eval_dataset: Evaluation dataset
         data_collator: Data collator for batching
         compute_metrics: Function to compute evaluation metrics
-        processor: Processor containing the feature extractor
+        tokenizer: Tokenizer for processing
         config: Training configuration. If None, uses default configuration
         training_args: Direct training arguments. If provided, overrides config
         lora_config: LoRA configuration. If provided, applies LoRA to the model
@@ -245,5 +245,5 @@ def create_trainer(
         eval_dataset=eval_dataset,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        tokenizer=processor,
+        tokenizer=tokenizer,
     )
