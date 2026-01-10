@@ -86,7 +86,7 @@ class TrainingConfig:
     # load_best_model_at_end: bool = True
     
     # Metrics
-    # metric_for_best_model: str = "wer"
+    metric_for_best_model: str = "wer"
     # greater_is_better: bool = False
     
     # Logging
