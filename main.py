@@ -10,12 +10,14 @@ logger.info("Loading environment variables...")
 dotenv.load_dotenv()
 logger.info("Importing dependencies...")
 
+import uuid
 from datasets import DatasetDict
 
 from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
 from src.asr_pipeline import WhisperASRPipeline
+from src.config.wandb_config import WandbAuthenticator
 from src.config.config import CONFIG
 
 logger.info("All dependencies loaded successfully")
@@ -80,6 +82,7 @@ def main():
     """Main execution function - highly readable thanks to facade pattern."""
     logger.info(f"{'=' * 60}\nWhisper Fine-Tuning for Sinhala Language\n{'=' * 60}")
 
+    # Authenticate with HuggingFace
     logger.info("Authenticating with HuggingFace...")
     token = HuggingFaceAuthenticator.get_token_from_env()
     authenticator = HuggingFaceAuthenticator(token=token)
@@ -88,7 +91,18 @@ def main():
         logger.error("Authentication failed. Exiting.")
         return
     logger.info("Successfully authenticated with HuggingFace")
+
+    # Authenticate with Weights & Biases
+    logger.info("Authenticating with Weights & Biases...")
+    wandb_api_key = WandbAuthenticator.get_api_key_from_env()
+    wandb_authenticator = WandbAuthenticator(api_key=wandb_api_key)
+    if not wandb_authenticator.authenticate():
+        logger.error("W&B Authentication failed. Exiting.")
+        return
+    run = wandb_authenticator.init_run(project=f"whisper-finetune-sinhala", entity="SPEAK-ASR-uom")
+    logger.info("Successfully initialized W&B")
     
+    # Load dataset
     logger.info(f"Loading dataset: {CONFIG.dataset.dataset_name}")
     data_loader = WhisperDataLoader(
         dataset_name=CONFIG.dataset.dataset_name,

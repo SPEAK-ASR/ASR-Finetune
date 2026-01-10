@@ -2,7 +2,6 @@ from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, EarlyStopping
 from typing import Optional
 from ..config.lora_config import LoRAConfig, apply_lora_to_model
 
-
 class ASRTrainerConfig:
     """Configuration for ASR training arguments."""
 
@@ -35,6 +34,7 @@ class ASRTrainerConfig:
         push_to_hub: bool = True,
         neftune_noise_alpha: Optional[float] = None,
         use_cache: bool = False,
+        remove_unused_columns: bool = True,
         **kwargs
     ):
         """
@@ -97,6 +97,7 @@ class ASRTrainerConfig:
         self.push_to_hub = push_to_hub
         self.neftune_noise_alpha = neftune_noise_alpha
         self.use_cache = use_cache
+        self.remove_unused_columns = remove_unused_columns
         self.kwargs = kwargs
 
     def to_training_arguments(self) -> Seq2SeqTrainingArguments:
@@ -134,6 +135,7 @@ class ASRTrainerConfig:
             push_to_hub=self.push_to_hub,
             neftune_noise_alpha=self.neftune_noise_alpha,
             use_cache=self.use_cache,
+            remove_unused_columns=self.remove_unused_columns,
             **self.kwargs
         )
 
