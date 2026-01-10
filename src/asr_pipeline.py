@@ -153,6 +153,7 @@ class WhisperASRPipeline:
             neftune_noise_alpha=CONFIG.training.neftune_noise_alpha,
             weight_decay=CONFIG.training.weight_decay,
             use_cache=CONFIG.training.use_cache,
+            remove_unused_columns=CONFIG.training.remove_unused_columns,
         )
         
         # Configure LoRA if enabled

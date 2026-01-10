@@ -10,7 +10,6 @@ logger.info("Loading environment variables...")
 dotenv.load_dotenv()
 logger.info("Importing dependencies...")
 
-import uuid
 from datasets import DatasetDict
 
 from src.huggingface import HuggingFaceAuthenticator
