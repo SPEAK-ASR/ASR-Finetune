@@ -165,7 +165,6 @@ class WhisperASRPipeline:
             target_modules=CONFIG.lora.target_modules,
             lora_dropout=CONFIG.lora.lora_dropout,
             bias=CONFIG.lora.bias,
-            task_type=CONFIG.lora.task_type,
         )
         
         # Setup data collator
