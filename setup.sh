@@ -69,22 +69,36 @@ if [ -f ".env" ]; then
     fi
 fi
 
-# Prompt for HuggingFace token if .env doesn't exist or was removed
+# Prompt for tokens if .env doesn't exist or was removed
 if [ ! -f ".env" ]; then
     echo -e "${YELLOW}Please enter your HuggingFace token:${NC}"
     echo -e "${YELLOW}(You can get it from: https://huggingface.co/settings/tokens)${NC}"
     read -r HF_TOKEN
-    
+
     if [ -z "$HF_TOKEN" ]; then
-        print_error "No token provided. Exiting."
+        print_error "No HuggingFace token provided. Exiting."
         exit 1
     fi
-    
-    echo "HF_TOKEN=\"$HF_TOKEN\"" > .env
-    print_success ".env file created with HuggingFace token"
+
+    echo -e "${YELLOW}Please enter your Weights & Biases API key:${NC}"
+    echo -e "${YELLOW}(You can get it from: https://wandb.ai/authorize)${NC}"
+    read -r WANDB_API_KEY
+
+    if [ -z "$WANDB_API_KEY" ]; then
+        print_error "No W&B API key provided. Exiting."
+        exit 1
+    fi
+
+    cat <<EOF > .env
+HF_TOKEN="$HF_TOKEN"
+WANDB_API_KEY="$WANDB_API_KEY"
+EOF
+
+    print_success ".env file created with HuggingFace and W&B tokens"
 else
     print_success "Using existing .env file"
 fi
+
 echo ""
 
 # Step 4: Create Python virtual environment
@@ -137,25 +151,3 @@ else
 fi
 echo ""
 
-# Step 6: Run main.py
-print_step "Step 6/6: Running main.py..."
-echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-echo -e "${YELLOW}Starting training...${NC}"
-echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-echo ""
-
-if python main.py; then
-    echo ""
-    echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-    print_success "Training completed successfully!"
-    echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-else
-    echo ""
-    echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-    print_error "Training failed. Check the logs above for details."
-    echo -e "${YELLOW}════════════════════════════════════════════════${NC}"
-    exit 1
-fi
-
-# Deactivate virtual environment
-deactivate
