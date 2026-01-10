@@ -7,33 +7,33 @@ class ASRTrainerConfig:
 
     def __init__(
         self,
-        run_name: Optional[str] = None,
+        # run_name: Optional[str] = None,
         output_dir: str = "./whisper-small-si",
         per_device_train_batch_size: int = 16,
         gradient_accumulation_steps: int = 1,
         learning_rate: float = 1e-5,
         warmup_steps: int = 100,
-        max_steps: int = -1,
+        # max_steps: int = -1,
         num_train_epochs: Optional[int] = None,
-        gradient_checkpointing: bool = True,
+        # gradient_checkpointing: bool = True,
         fp16: bool = False,
         bf16: bool = True,
-        auto_find_batch_size: bool = False,
-        optim: str = "adamw_torch",
+        # auto_find_batch_size: bool = False,
+        # optim: str = "adamw_torch",
         eval_strategy: str = "steps",
         per_device_eval_batch_size: int = 8,
-        predict_with_generate: bool = True,
+        # predict_with_generate: bool = True,
         generation_max_length: int = 225,
-        save_steps: int = 1000,
+        # save_steps: int = 1000,
         eval_steps: int = 1000,
         logging_steps: int = 100,
         report_to: list = None,
-        load_best_model_at_end: bool = True,
-        metric_for_best_model: str = "wer",
-        greater_is_better: bool = False,
+        # load_best_model_at_end: bool = True,
+        # metric_for_best_model: str = "wer",
+        # greater_is_better: bool = False,
         push_to_hub: bool = True,
         neftune_noise_alpha: Optional[float] = None,
-        use_cache: bool = False,
+        # use_cache: bool = False,
         remove_unused_columns: bool = True,
         label_names: list = None,
         **kwargs
@@ -71,33 +71,33 @@ class ASRTrainerConfig:
             use_cache: Whether the model should use the past key/values attentions (if applicable to the model) to speed up decoding
             **kwargs: Additional arguments to pass to Seq2SeqTrainingArguments
         """
-        self.run_name = run_name
+        # self.run_name = run_name
         self.output_dir = output_dir
         self.per_device_train_batch_size = per_device_train_batch_size
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.learning_rate = learning_rate
         self.warmup_steps = warmup_steps
-        self.max_steps = max_steps
+        # self.max_steps = max_steps
         self.num_train_epochs = num_train_epochs
-        self.gradient_checkpointing = gradient_checkpointing
+        # self.gradient_checkpointing = gradient_checkpointing
         self.fp16 = fp16
         self.bf16 = bf16
-        self.auto_find_batch_size = auto_find_batch_size
-        self.optim = optim
+        # self.auto_find_batch_size = auto_find_batch_size
+        # self.optim = optim
         self.eval_strategy = eval_strategy
         self.per_device_eval_batch_size = per_device_eval_batch_size
-        self.predict_with_generate = predict_with_generate
+        # self.predict_with_generate = predict_with_generate
         self.generation_max_length = generation_max_length
-        self.save_steps = save_steps
+        # self.save_steps = save_steps
         self.eval_steps = eval_steps
         self.logging_steps = logging_steps
         self.report_to = report_to if report_to is not None else ["tensorboard"]
-        self.load_best_model_at_end = load_best_model_at_end
-        self.metric_for_best_model = metric_for_best_model
-        self.greater_is_better = greater_is_better
+        # self.load_best_model_at_end = load_best_model_at_end
+        # self.metric_for_best_model = metric_for_best_model
+        # self.greater_is_better = greater_is_better
         self.push_to_hub = push_to_hub
         self.neftune_noise_alpha = neftune_noise_alpha
-        self.use_cache = use_cache
+        # self.use_cache = use_cache
         self.remove_unused_columns = remove_unused_columns
         self.label_names = label_names
         self.kwargs = kwargs
@@ -115,28 +115,28 @@ class ASRTrainerConfig:
             gradient_accumulation_steps=self.gradient_accumulation_steps,
             learning_rate=self.learning_rate,
             warmup_steps=self.warmup_steps,
-            max_steps=self.max_steps,
+            # max_steps=self.max_steps,
             num_train_epochs=self.num_train_epochs,
-            gradient_checkpointing=self.gradient_checkpointing,
+            # gradient_checkpointing=self.gradient_checkpointing,
             fp16=self.fp16,
             bf16=self.bf16,
-            auto_find_batch_size=self.auto_find_batch_size,
-            optim=self.optim,
+            # auto_find_batch_size=self.auto_find_batch_size,
+            # optim=self.optim,
             eval_strategy=self.eval_strategy,
             per_device_eval_batch_size=self.per_device_eval_batch_size,
-            predict_with_generate=self.predict_with_generate,
+            # predict_with_generate=self.predict_with_generate,
             generation_max_length=self.generation_max_length,
-            save_steps=self.save_steps,
+            # save_steps=self.save_steps,
             eval_steps=self.eval_steps,
             logging_steps=self.logging_steps,
             report_to=self.report_to,
-            run_name=self.run_name,
-            load_best_model_at_end=self.load_best_model_at_end,
-            metric_for_best_model=self.metric_for_best_model,
-            greater_is_better=self.greater_is_better,
+            # run_name=self.run_name,
+            # load_best_model_at_end=self.load_best_model_at_end,
+            # metric_for_best_model=self.metric_for_best_model,
+            # greater_is_better=self.greater_is_better,
             push_to_hub=self.push_to_hub,
             neftune_noise_alpha=self.neftune_noise_alpha,
-            use_cache=self.use_cache,
+            # use_cache=self.use_cache,
             remove_unused_columns=self.remove_unused_columns,
             label_names=self.label_names,
             **self.kwargs
@@ -178,6 +178,8 @@ class ASRTrainer:
             processing_class=tokenizer,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
+
+        model.config.use_cache = False
 
     def train(self):
         """Start the training process."""

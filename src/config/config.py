@@ -49,45 +49,45 @@ class TrainingConfig:
     """Configuration for model training."""
     
     # Training identification
-    run_name: str = "whisper-sinhala-finetune"
+    # run_name: str = "whisper-sinhala-finetune"
     output_dir: str = "checkpoints"
     
     # Training epochs/steps
     num_train_epochs: int = 3
-    max_steps: int = -1
+    # max_steps: int = -1
     
     # Batch sizes
     per_device_train_batch_size: int = 32
     per_device_eval_batch_size: int = 8
     gradient_accumulation_steps: int = 1
-    auto_find_batch_size: bool = True
+    # auto_find_batch_size: bool = True
     
     # Learning rate
     learning_rate: float = 1e-3
     warmup_steps: int = 0
-    lr_scheduler_type: str = "linear"
+    # lr_scheduler_type: str = "linear"
 
     # Optimization
-    gradient_checkpointing: bool = True
-    use_cache: bool = False
+    # gradient_checkpointing: bool = True
+    # use_cache: bool = False
     fp16: bool = False
     bf16: bool = True
-    optim: str = "adamw_torch"
+    # optim: str = "adamw_torch"
     
     # Evaluation
     eval_strategy: str = "steps"
     eval_steps: int = 250
-    predict_with_generate: bool = True
+    # predict_with_generate: bool = True
     generation_max_length: int = None
     
     # Checkpointing
-    save_strategy: str = "steps"
-    save_steps: int = 250
-    load_best_model_at_end: bool = True
+    # save_strategy: str = "steps"
+    # save_steps: int = 250
+    # load_best_model_at_end: bool = True
     
     # Metrics
-    metric_for_best_model: str = "wer"
-    greater_is_better: bool = False
+    # metric_for_best_model: str = "wer"
+    # greater_is_better: bool = False
     
     # Logging
     logging_strategy: str = "steps"
@@ -97,11 +97,11 @@ class TrainingConfig:
     
     # Hub integration
     push_to_hub: bool = True
-    hub_strategy: str = "every_save"
+    # hub_strategy: str = "every_save"
     
     # Advanced features
     neftune_noise_alpha: Optional[float] = 5.0  # 5.0-15.0 for NEFTune, None to disable
-    weight_decay: float = 0.01
+    # weight_decay: float = 0.01
     remove_unused_columns: bool = True
     label_names: List[str] = field(default_factory=lambda: ["labels"])
 
