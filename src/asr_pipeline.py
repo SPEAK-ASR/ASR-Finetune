@@ -142,7 +142,7 @@ class WhisperASRPipeline:
             # save_strategy=CONFIG.training.save_strategy,
             # save_steps=CONFIG.training.save_steps,
             # load_best_model_at_end=CONFIG.training.load_best_model_at_end,
-            # metric_for_best_model=CONFIG.training.metric_for_best_model,
+            metric_for_best_model=CONFIG.training.metric_for_best_model,
             # greater_is_better=CONFIG.training.greater_is_better,
             logging_strategy=CONFIG.training.logging_strategy,
             logging_steps=CONFIG.training.logging_steps,
