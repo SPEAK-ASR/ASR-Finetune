@@ -93,7 +93,7 @@ class TrainingConfig:
     logging_strategy: str = "steps"
     logging_steps: int = 25
     logging_first_step: bool = True
-    report_to: List[str] = field(default_factory=lambda: ["mlflow"])
+    report_to: List[str] = field(default_factory=lambda: ["mlflow", "wandb"])
     
     # Hub integration
     push_to_hub: bool = True
@@ -102,6 +102,7 @@ class TrainingConfig:
     # Advanced features
     neftune_noise_alpha: Optional[float] = 5.0  # 5.0-15.0 for NEFTune, None to disable
     weight_decay: float = 0.01
+    remove_unused_columns: bool = True
 
 
 @dataclass
