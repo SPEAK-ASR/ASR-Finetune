@@ -35,6 +35,7 @@ class ASRTrainerConfig:
         neftune_noise_alpha: Optional[float] = None,
         use_cache: bool = False,
         remove_unused_columns: bool = True,
+        label_names: list = None,
         **kwargs
     ):
         """
@@ -98,6 +99,7 @@ class ASRTrainerConfig:
         self.neftune_noise_alpha = neftune_noise_alpha
         self.use_cache = use_cache
         self.remove_unused_columns = remove_unused_columns
+        self.label_names = label_names
         self.kwargs = kwargs
 
     def to_training_arguments(self) -> Seq2SeqTrainingArguments:
@@ -136,6 +138,7 @@ class ASRTrainerConfig:
             neftune_noise_alpha=self.neftune_noise_alpha,
             use_cache=self.use_cache,
             remove_unused_columns=self.remove_unused_columns,
+            label_names=self.label_names,
             **self.kwargs
         )
 
@@ -233,8 +236,8 @@ def create_trainer(
         ASRTrainer instance
     """
     # Apply LoRA if configuration is provided
-    # if lora_config is not None:
-    #     model = apply_lora_to_model(model, lora_config)
+    if lora_config is not None:
+        model = apply_lora_to_model(model, lora_config)
 
     if training_args is None:
         if config is None:

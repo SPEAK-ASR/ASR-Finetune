@@ -12,7 +12,6 @@ class LoRAConfig:
         target_modules: Optional[list] = None,
         lora_dropout: float = 0.1,
         bias: str = "none",
-        task_type: str = "SEQ_2_SEQ_LM",
     ):
         """
         Initialize LoRA configuration.
@@ -32,7 +31,6 @@ class LoRAConfig:
         self.target_modules = target_modules or ["q_proj", "v_proj"]
         self.lora_dropout = lora_dropout
         self.bias = bias
-        self.task_type = task_type
 
     def to_peft_config(self) -> PEFTLoraConfig:
         """
@@ -47,7 +45,6 @@ class LoRAConfig:
             target_modules=self.target_modules,
             lora_dropout=self.lora_dropout,
             bias=self.bias,
-            task_type=self.task_type,
         )
 
 

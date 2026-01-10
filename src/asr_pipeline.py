@@ -154,6 +154,7 @@ class WhisperASRPipeline:
             weight_decay=CONFIG.training.weight_decay,
             use_cache=CONFIG.training.use_cache,
             remove_unused_columns=CONFIG.training.remove_unused_columns,
+            label_names=CONFIG.training.label_names,
         )
         
         # Configure LoRA if enabled

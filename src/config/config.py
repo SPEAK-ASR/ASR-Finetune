@@ -50,21 +50,21 @@ class TrainingConfig:
     
     # Training identification
     run_name: str = "whisper-sinhala-finetune"
-    output_dir: str = "./whisper-small-sinhala"
+    output_dir: str = "checkpoints"
     
     # Training epochs/steps
-    num_train_epochs: int = 5
+    num_train_epochs: int = 3
     max_steps: int = -1
     
     # Batch sizes
-    per_device_train_batch_size: int = 16
+    per_device_train_batch_size: int = 32
     per_device_eval_batch_size: int = 8
     gradient_accumulation_steps: int = 1
     auto_find_batch_size: bool = True
     
     # Learning rate
-    learning_rate: float = 1e-5
-    warmup_steps: int = 100
+    learning_rate: float = 1e-3
+    warmup_steps: int = 0
     lr_scheduler_type: str = "linear"
 
     # Optimization
@@ -91,7 +91,7 @@ class TrainingConfig:
     
     # Logging
     logging_strategy: str = "steps"
-    logging_steps: int = 25
+    logging_steps: int = 1
     logging_first_step: bool = True
     report_to: List[str] = field(default_factory=lambda: ["mlflow", "wandb"])
     
@@ -103,17 +103,17 @@ class TrainingConfig:
     neftune_noise_alpha: Optional[float] = 5.0  # 5.0-15.0 for NEFTune, None to disable
     weight_decay: float = 0.01
     remove_unused_columns: bool = True
+    label_names: List[str] = field(default_factory=lambda: ["labels"])
 
 
 @dataclass
 class LoRAConfig:
     """Configuration for LoRA (Low-Rank Adaptation)."""
-    r: int = 8
-    lora_alpha: int = 16
+    r: int = 32
+    lora_alpha: int = 64
     target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
-    lora_dropout: float = 0.1
+    lora_dropout: float = 0.05
     bias: str = "none"
-    task_type: str = "SEQ_2_SEQ_LM"
 
 
 @dataclass
