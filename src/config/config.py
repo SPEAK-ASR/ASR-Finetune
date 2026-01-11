@@ -57,13 +57,13 @@ class TrainingConfig:
     # max_steps: int = -1
     
     # Batch sizes
-    per_device_train_batch_size: int = 32
-    per_device_eval_batch_size: int = 8
+    per_device_train_batch_size: int = 64
+    per_device_eval_batch_size: int = 16
     gradient_accumulation_steps: int = 1
-    # auto_find_batch_size: bool = True
+    auto_find_batch_size: bool = True
     
     # Learning rate
-    learning_rate: float = 1e-3
+    learning_rate: float = 1e-4
     warmup_steps: int = 0
     # lr_scheduler_type: str = "linear"
 
@@ -72,32 +72,36 @@ class TrainingConfig:
     # use_cache: bool = False
     fp16: bool = False
     bf16: bool = True
-    # optim: str = "adamw_torch"
+    optim: str = "adamw_torch_fused"
+    dataloader_num_workers: int = 8
+    dataloader_pin_memory: bool = True
     
     # Evaluation
     eval_strategy: str = "steps"
-    eval_steps: int = 250
+    eval_steps: int = 500
     # predict_with_generate: bool = True
-    generation_max_length: int = None
+    generation_max_length: int = 256
+    prediction_loss_only: bool = True
     
     # Checkpointing
     # save_strategy: str = "steps"
-    # save_steps: int = 250
-    # load_best_model_at_end: bool = True
+    save_steps: int = 500
+    load_best_model_at_end: bool = True
     
     # Metrics
-    metric_for_best_model: str = "wer"
-    # greater_is_better: bool = False
+    metric_for_best_model: str = "eval_loss"
+    greater_is_better: bool = False
     
     # Logging
     logging_strategy: str = "steps"
     logging_steps: int = 1
     logging_first_step: bool = True
-    report_to: List[str] = field(default_factory=lambda: ["mlflow", "wandb"])
+    report_to: List[str] = field(default_factory=lambda: ["wandb"])
     
     # Hub integration
     push_to_hub: bool = True
-    # hub_strategy: str = "every_save"
+    hub_strategy: str = "checkpoint"
+    hub_model_id: str = "speak-whisper-small-si"
     
     # Advanced features
     neftune_noise_alpha: Optional[float] = 5.0  # 5.0-15.0 for NEFTune, None to disable
@@ -125,8 +129,7 @@ class HuggingFaceConfig:
     hf_token_env_var: str = "HF_TOKEN"
     pretty_name: str = "Whisper Small - Sinhala ASR Fine-Tuned"
     dataset_args: str = "config: si, split: test"
-    model_name: str = "speak-whisper-small-si"
-    hub_repo_id: str = "SPEAK-ASR/speak-whisper-small-si"
+    model_name: str = "SPEAK-ASR/speak-whisper-small-si"
     tasks: str = "automatic-speech-recognition"
 
 
@@ -145,7 +148,7 @@ class PathConfig:
     
     # Log directories
     log_dir: str = "./logs"
-    tensorboard_dir: str = "./runs"
+    wandb_dir: str = "./wandb"
 
 
 @dataclass
