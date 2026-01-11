@@ -58,17 +58,18 @@ class TrainingConfig:
     
     # Batch sizes
     per_device_train_batch_size: int = 64
-    per_device_eval_batch_size: int = 16
+    per_device_eval_batch_size: int = 4  # Small batch for generation (prevents OOM)
     gradient_accumulation_steps: int = 1
+    eval_accumulation_steps: int = 8  # Accumulate predictions to save memory
     auto_find_batch_size: bool = True
     
     # Learning rate
-    learning_rate: float = 1e-4
-    warmup_steps: int = 0
+    learning_rate: float = 1e-5  # Lower learning rate for stable fine-tuning
+    warmup_steps: int = 500  # Warmup steps for learning rate scheduler
     # lr_scheduler_type: str = "linear"
 
     # Optimization
-    # gradient_checkpointing: bool = True
+    gradient_checkpointing: bool = True  # Enable to save memory and allow larger batches
     # use_cache: bool = False
     fp16: bool = False
     bf16: bool = True
@@ -79,9 +80,9 @@ class TrainingConfig:
     # Evaluation
     eval_strategy: str = "steps"
     eval_steps: int = 500
-    # predict_with_generate: bool = True
-    generation_max_length: int = 256
-    prediction_loss_only: bool = True
+    predict_with_generate: bool = True  # Required for WER computation
+    generation_max_length: int = 225
+    prediction_loss_only: bool = False  # Must be False to compute WER
     
     # Checkpointing
     # save_strategy: str = "steps"
