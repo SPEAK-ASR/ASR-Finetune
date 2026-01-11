@@ -7,6 +7,7 @@ from datasets import load_dataset, DatasetDict
 from typing import Optional
 
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -59,7 +60,8 @@ class WhisperDataLoader:
             self.dataset["train"] = load_dataset(
                 self.dataset_name,
                 split=train_split,
-                token=self.token
+                token=self.token,
+                cache_dir=CONFIG.paths.cache_dir
             )
             logger.info(f"Train dataset loaded: {len(self.dataset['train'])} samples")
             
@@ -68,7 +70,8 @@ class WhisperDataLoader:
             self.dataset["test"] = load_dataset(
                 self.dataset_name,
                 split=test_split,
-                token=self.token
+                token=self.token,
+                cache_dir=CONFIG.paths.cache_dir
             )
             logger.info(f"Test dataset loaded: {len(self.dataset['test'])} samples")
             

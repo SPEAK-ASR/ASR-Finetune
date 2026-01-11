@@ -4,6 +4,7 @@ Processor component for Whisper ASR.
 
 from transformers import WhisperProcessor
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -41,7 +42,8 @@ class ProcessorComponent:
             self.processor = WhisperProcessor.from_pretrained(
                 self.model_name,
                 language=self.language,
-                task=self.task
+                task=self.task,
+                cache_dir=CONFIG.paths.model_cache_dir
             )
             logger.info("Processor created successfully")
             return self.processor

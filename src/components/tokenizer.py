@@ -5,6 +5,7 @@ Tokenizer component for Whisper ASR.
 from transformers import WhisperTokenizer
 from datasets import DatasetDict
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -42,7 +43,8 @@ class TokenizerComponent:
             self.tokenizer = WhisperTokenizer.from_pretrained(
                 self.model_name,
                 language=self.language,
-                task=self.task
+                task=self.task,
+                cache_dir=CONFIG.paths.model_cache_dir
             )
             logger.info("Tokenizer loaded successfully")
             return self.tokenizer

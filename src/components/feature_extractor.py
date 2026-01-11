@@ -4,6 +4,7 @@ Feature Extractor component for Whisper ASR.
 
 from transformers import WhisperFeatureExtractor
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -32,7 +33,8 @@ class FeatureExtractorComponent:
         
         try:
             self.feature_extractor = WhisperFeatureExtractor.from_pretrained(
-                self.model_name
+                self.model_name,
+                cache_dir=CONFIG.paths.model_cache_dir
             )
             logger.info("Feature extractor loaded successfully")
             return self.feature_extractor

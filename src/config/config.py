@@ -137,18 +137,13 @@ class HuggingFaceConfig:
 class PathConfig:
     """Configuration for file paths and directories."""
     
-    # Base directories
-    project_root: str = field(default_factory=lambda: os.getcwd())
-    data_dir: str = "./data"
-    cache_dir: str = "./cache"
-    
-    # Model directories
-    model_cache_dir: str = "./models"
-    checkpoint_dir: str = "./checkpoints"
+    # Cache directories
+    cache_dir: str = "./cache"  # HuggingFace datasets cache
+    model_cache_dir: str = "./models"  # HuggingFace models cache
     
     # Log directories
-    log_dir: str = "./logs"
-    wandb_dir: str = "./wandb"
+    log_dir: str = "./logs"  # Application logs
+    wandb_dir: str = "./wandb"  # Weights & Biases logs
 
 
 @dataclass

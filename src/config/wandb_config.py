@@ -8,6 +8,7 @@ from typing import Optional
 import os
 
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -29,6 +30,10 @@ class WandbAuthenticator:
         """
         try:
             logger.info("Attempting to authenticate with W&B...")
+            
+            # Set W&B directory
+            os.environ["WANDB_DIR"] = CONFIG.paths.wandb_dir
+            os.makedirs(CONFIG.paths.wandb_dir, exist_ok=True)
             
             if self.api_key:
                 wandb.login(key=self.api_key)

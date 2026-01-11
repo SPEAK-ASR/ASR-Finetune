@@ -4,6 +4,7 @@ Model component for Whisper ASR.
 
 from transformers import WhisperForConditionalGeneration
 from src.utils.logger import setup_logger
+from src.config.config import CONFIG
 
 logger = setup_logger(__name__)
 
@@ -36,7 +37,8 @@ class ModelComponent:
         
         try:
             self.model = WhisperForConditionalGeneration.from_pretrained(
-                self.model_name
+                self.model_name,
+                cache_dir=CONFIG.paths.model_cache_dir
             )
             
             # Configure generation settings
