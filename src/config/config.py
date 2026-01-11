@@ -64,7 +64,7 @@ class TrainingConfig:
     
     # Learning rate
     learning_rate: float = 1e-4
-    warmup_steps: int = 0
+    warmup_steps: int = 500
     # lr_scheduler_type: str = "linear"
 
     # Optimization
