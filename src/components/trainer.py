@@ -1,5 +1,5 @@
 from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, EarlyStoppingCallback
-from typing import Optional
+from typing import Optional, Union
 from ..config.lora_config import LoRAConfig, apply_lora_to_model
 
 class ASRTrainerConfig:
@@ -181,9 +181,9 @@ class ASRTrainer:
 
         model.config.use_cache = False
 
-    def train(self):
+    def train(self, resume_from_checkpoint: Optional[Union[str, bool]] = False):
         """Start the training process."""
-        return self.trainer.train()
+        return self.trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
     def evaluate(self):
         """Evaluate the model."""

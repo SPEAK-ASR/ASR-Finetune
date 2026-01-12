@@ -72,7 +72,7 @@ def _finetune_asr_model(token: str, dataset: DatasetDict) -> None:
     
     logger.info(f"{'=' * 40}")
     logger.info(f"Training Results:")
-    logger.info(f"Final WER: {results.get('eval_wer', 'N/A')}")
+    logger.info(f"Final results: {results}")
     logger.info(f"{'=' * 40}")
 
 
@@ -101,21 +101,16 @@ def main():
     run = wandb_authenticator.init_run(project=f"whisper-finetune-sinhala", entity="SPEAK-ASR-uom")
     logger.info("Successfully initialized W&B")
     
-    # Load dataset
-    logger.info(f"Loading dataset: {CONFIG.dataset.dataset_name}")
-    data_loader = WhisperDataLoader(
-        dataset_name=CONFIG.dataset.dataset_name,
-        token=CONFIG.dataset.use_auth_token
-    )
+    # Load dataset(s)
+    dataset_names = [ds.dataset_name for ds in CONFIG.dataset.datasets]
+    logger.info(f"Loading {len(CONFIG.dataset.datasets)} dataset(s): {dataset_names}")
+    data_loader = WhisperDataLoader()
 
-    dataset = data_loader.load_datasets(
-        train_split=CONFIG.dataset.train_split,
-        test_split=CONFIG.dataset.test_split
-    )
+    dataset = data_loader.load_datasets()
 
     logger.info(f"Dataset loaded successfully")
-    logger.info(f"Train split: {CONFIG.dataset.train_split}")
-    logger.info(f"Test split: {CONFIG.dataset.test_split}")
+    logger.info(f"Train samples: {len(dataset['train'])}")
+    logger.info(f"Test samples: {len(dataset['test'])}")
     logger.info(f"Dataset structure: {dataset}")
     
     logger.info(f"Task selected: {CONFIG.dataset.task}")

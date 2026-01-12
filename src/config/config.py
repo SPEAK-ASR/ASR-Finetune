@@ -4,8 +4,16 @@ This module provides a comprehensive configuration system for all constants and 
 """
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Union
 import os
+
+
+@dataclass
+class SingleDatasetConfig:
+    """Configuration for a single dataset source."""
+    dataset_name: str
+    train_split: str | None = "train"
+    test_split: str | None = "test"
 
 
 @dataclass
@@ -15,15 +23,26 @@ class DatasetConfig:
     # task can be either prepare_dataset or finetune_asr_model
     task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
     
-    # Dataset before preprocessing
-    # dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr"
-    # train_split: str = "train[:21000]+validation[:3000]"
-    # test_split: str = "test[:6000]"
-
-    # for finetuning using preprocessed dataset
-    dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr-preprocessed-2"
-    train_split: str = "train"
-    test_split: str = "test"
+    # Multiple datasets configuration
+    # Each dataset has: dataset_name, train_split, test_split
+    # All datasets will be combined into a single DatasetDict
+    datasets: List[SingleDatasetConfig] = field(default_factory=lambda: [
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-1",
+            train_split="train",
+            test_split="test"
+        ),
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-2",
+            train_split="train",
+            test_split="test"
+        ),
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-3",
+            train_split="train",
+            test_split=None
+        )
+    ])
 
     use_auth_token: bool = True
 
@@ -55,6 +74,7 @@ class TrainingConfig:
     # Training epochs/steps
     num_train_epochs: int = 3
     # max_steps: int = -1
+    resume_from_checkpoint: Optional[Union[str, bool]] = False  # Path to checkpoint or False
     
     # Batch sizes
     per_device_train_batch_size: int = 64

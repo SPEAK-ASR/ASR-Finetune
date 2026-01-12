@@ -184,16 +184,18 @@ class WhisperASRPipeline:
         )
         
         logger.info("Beginning training...")
-        results = trainer.train()
+        results = trainer.train(
+            resume_from_checkpoint=CONFIG.training.resume_from_checkpoint
+        )
         
         logger.info("Fine-tuning complete!")
 
         kwargs = {
             "dataset_tags": CONFIG.dataset.dataset_name,
             "dataset": CONFIG.huggingface.pretty_name,  # a 'pretty' name for the training dataset
-            "danguage": "si",
-            "motaset_args": CONFIG.huggingface.dataset_args,
-            "ladel_name": CONFIG.huggingface.model_name,  # a 'pretty' name for your model
+            "language": "si",
+            "dataset_args": CONFIG.huggingface.dataset_args,
+            "model_name": CONFIG.huggingface.model_name,  # a 'pretty' name for your model
             "finetuned_from": CONFIG.model.model_name,
             "tasks": CONFIG.huggingface.tasks,
         }
