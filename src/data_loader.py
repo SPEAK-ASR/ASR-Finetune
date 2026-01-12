@@ -49,26 +49,30 @@ class WhisperDataLoader:
                 logger.info(f"Loading dataset '{ds_config.dataset_name}'")
                 
                 # Load training data
-                logger.info(f"  Loading train split: {ds_config.train_split}")
-                train_data = load_dataset(
-                    ds_config.dataset_name,
-                    split=ds_config.train_split,
-                    token=self.token,
-                    cache_dir=CONFIG.paths.cache_dir
-                )
-                all_train_datasets.append(train_data)
-                logger.info(f"  Train data loaded: {len(train_data)} samples")
+                if ds_config.train_split is not None:
+                    logger.info(f"  Loading train split: {ds_config.train_split}")
+                    train_data = load_dataset(
+                        ds_config.dataset_name,
+                        split=ds_config.train_split,
+                        token=self.token,
+                        cache_dir=CONFIG.paths.cache_dir,
+                        keep_in_memory=CONFIG.dataset.keep_in_memory
+                    )
+                    all_train_datasets.append(train_data)
+                    logger.info(f"  Train data loaded: {len(train_data)} samples")
                 
                 # Load test data
-                logger.info(f"  Loading test split: {ds_config.test_split}")
-                test_data = load_dataset(
-                    ds_config.dataset_name,
-                    split=ds_config.test_split,
-                    token=self.token,
-                    cache_dir=CONFIG.paths.cache_dir
-                )
-                all_test_datasets.append(test_data)
-                logger.info(f"  Test data loaded: {len(test_data)} samples")
+                if ds_config.test_split is not None:
+                    logger.info(f"  Loading test split: {ds_config.test_split}")
+                    test_data = load_dataset(
+                        ds_config.dataset_name,
+                        split=ds_config.test_split,
+                        token=self.token,
+                        cache_dir=CONFIG.paths.cache_dir,
+                        keep_in_memory=CONFIG.dataset.keep_in_memory
+                    )
+                    all_test_datasets.append(test_data)
+                    logger.info(f"  Test data loaded: {len(test_data)} samples")
             
             # Combine datasets
             self.dataset = DatasetDict()
