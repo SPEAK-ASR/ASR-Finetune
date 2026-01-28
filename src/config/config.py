@@ -36,7 +36,7 @@ class DatasetConfig:
         SingleDatasetConfig(
             dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-2",
             train_split="train",
-            test_split="test"
+            test_split=None
         ),
         SingleDatasetConfig(
             dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-3",
@@ -87,7 +87,7 @@ class TrainingConfig:
     
     # Batch sizes
     per_device_train_batch_size: int = 64
-    per_device_eval_batch_size: int = 16
+    per_device_eval_batch_size: int = 4
     gradient_accumulation_steps: int = 1
     auto_find_batch_size: bool = True
     
@@ -107,14 +107,14 @@ class TrainingConfig:
     
     # Evaluation
     eval_strategy: str = "steps"
-    eval_steps: int = 500
-    # predict_with_generate: bool = True
+    eval_steps: int = 1000
+    predict_with_generate: bool = True
     generation_max_length: int = 256
-    prediction_loss_only: bool = True
-    
+    prediction_loss_only: bool = False
+
     # Checkpointing
     # save_strategy: str = "steps"
-    save_steps: int = 500
+    save_steps: int = 1000
     save_total_limit: int = 5
     load_best_model_at_end: bool = True
     
