@@ -119,51 +119,6 @@ class WhisperASRPipeline:
         self._ensure_initialized()
         logger.info("Starting fine-tuning workflow...")
         
-        # Configure training
-        training_config = ASRTrainerConfig(
-            # run_name=CONFIG.training.run_name,
-            output_dir=CONFIG.training.output_dir,
-            num_train_epochs=CONFIG.training.num_train_epochs,
-            # max_steps=CONFIG.training.max_steps,
-            per_device_train_batch_size=CONFIG.training.per_device_train_batch_size,
-            per_device_eval_batch_size=CONFIG.training.per_device_eval_batch_size,
-            gradient_accumulation_steps=CONFIG.training.gradient_accumulation_steps,
-            auto_find_batch_size=CONFIG.training.auto_find_batch_size,
-            learning_rate=CONFIG.training.learning_rate,
-            warmup_steps=CONFIG.training.warmup_steps,
-            # lr_scheduler_type=CONFIG.training.lr_scheduler_type,
-            # gradient_checkpointing=CONFIG.training.gradient_checkpointing,
-            fp16=CONFIG.training.fp16,
-            bf16=CONFIG.training.bf16,
-            optim=CONFIG.training.optim,
-            dataloader_num_workers=CONFIG.training.dataloader_num_workers,
-            dataloader_pin_memory=CONFIG.training.dataloader_pin_memory,
-            eval_strategy=CONFIG.training.eval_strategy,
-            eval_steps=CONFIG.training.eval_steps,
-            generation_max_length=CONFIG.training.generation_max_length,
-            # predict_with_generate=CONFIG.training.predict_with_generate,
-            prediction_loss_only=CONFIG.training.prediction_loss_only,
-            # save_strategy=CONFIG.training.save_strategy,
-            save_steps=CONFIG.training.save_steps,
-            save_total_limit=CONFIG.training.save_total_limit,
-            # save_only_model=CONFIG.training.save_only_model,
-            load_best_model_at_end=CONFIG.training.load_best_model_at_end,
-            metric_for_best_model=CONFIG.training.metric_for_best_model,
-            greater_is_better=CONFIG.training.greater_is_better,
-            logging_strategy=CONFIG.training.logging_strategy,
-            logging_steps=CONFIG.training.logging_steps,
-            logging_first_step=CONFIG.training.logging_first_step,
-            report_to=CONFIG.training.report_to,
-            push_to_hub=CONFIG.training.push_to_hub,
-            hub_model_id=CONFIG.training.hub_model_id,
-            hub_strategy=CONFIG.training.hub_strategy,
-            neftune_noise_alpha=CONFIG.training.neftune_noise_alpha,
-            # weight_decay=CONFIG.training.weight_decay,
-            # use_cache=CONFIG.training.use_cache,
-            remove_unused_columns=CONFIG.training.remove_unused_columns,
-            label_names=CONFIG.training.label_names,
-        )
-        
         # Configure LoRA if enabled
         lora_config = None
         lora_config = LoRAConfig(
@@ -181,7 +136,6 @@ class WhisperASRPipeline:
         trainer = self._create_trainer(
             train_dataset=dataset["train"],
             eval_dataset=dataset["test"],
-            training_config=training_config,
             lora_config=lora_config,
         )
         
@@ -219,7 +173,6 @@ class WhisperASRPipeline:
         self,
         train_dataset: Dataset,
         eval_dataset: Dataset,
-        training_config: ASRTrainerConfig,
         lora_config: Optional[LoRAConfig] = None,
     ):
         """Internal method to create trainer."""
@@ -237,7 +190,6 @@ class WhisperASRPipeline:
             data_collator=data_collator,
             compute_metrics=evaluator.compute_metrics,
             tokenizer=tokenizer,
-            config=training_config,
             lora_config=lora_config,
         )
     
