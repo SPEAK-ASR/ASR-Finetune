@@ -65,8 +65,16 @@ class ModelConfig:
 
 
 @dataclass
+class RuntimeConfig:
+    """Configuration for runtime/execution settings."""
+    
+    # Checkpoint resumption
+    resume_from_checkpoint: Optional[Union[str, bool]] = False  # Path to checkpoint or False
+
+
+@dataclass
 class TrainingConfig:
-    """Configuration for model training."""
+    """Configuration for model training (Seq2SeqTrainingArguments compatible)."""
     
     # Training identification
     # run_name: str = "whisper-sinhala-finetune"
@@ -75,7 +83,6 @@ class TrainingConfig:
     # Training epochs/steps
     num_train_epochs: int = 3
     # max_steps: int = -1
-    resume_from_checkpoint: Optional[Union[str, bool]] = False  # Path to checkpoint or False
     
     # Batch sizes
     per_device_train_batch_size: int = 64
@@ -107,6 +114,7 @@ class TrainingConfig:
     # Checkpointing
     # save_strategy: str = "steps"
     save_steps: int = 500
+    save_total_limit: int = 5
     load_best_model_at_end: bool = True
     
     # Metrics
@@ -177,6 +185,7 @@ class Config:
     # Configuration sections
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
     lora: LoRAConfig = field(default_factory=LoRAConfig)
     huggingface: HuggingFaceConfig = field(default_factory=HuggingFaceConfig)
