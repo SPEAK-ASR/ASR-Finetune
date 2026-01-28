@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Optional, List, Union
 import os
 
+HF_MODEL_ID = "SPEAK-ASR/speak-whisper-small-si-full-dataset"
 
 @dataclass
 class SingleDatasetConfig:
@@ -130,7 +131,7 @@ class TrainingConfig:
     # Hub integration
     push_to_hub: bool = True
     hub_strategy: str = "checkpoint"
-    hub_model_id: str = "speak-whisper-small-si"
+    hub_model_id: str = HF_MODEL_ID
     
     # Advanced features
     neftune_noise_alpha: Optional[float] = 5.0  # 5.0-15.0 for NEFTune, None to disable
@@ -158,7 +159,7 @@ class HuggingFaceConfig:
     hf_token_env_var: str = "HF_TOKEN"
     pretty_name: str = "Whisper Small - Sinhala ASR Fine-Tuned"
     dataset_args: str = "config: si, split: test"
-    model_name: str = "SPEAK-ASR/speak-whisper-small-si"
+    model_name: str = HF_MODEL_ID
     tasks: str = "automatic-speech-recognition"
 
 
