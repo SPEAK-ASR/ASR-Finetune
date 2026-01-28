@@ -13,11 +13,6 @@ from src.config.config import CONFIG, SingleDatasetConfig
 
 logger = setup_logger(__name__)
 
-# Disable HuggingFace dataset caching to prevent storage bloat during training
-if CONFIG.paths.disable_dataset_caching:
-    disable_caching()
-    logger.info("HuggingFace dataset caching DISABLED to save storage")
-
 
 class WhisperDataLoader:
     """

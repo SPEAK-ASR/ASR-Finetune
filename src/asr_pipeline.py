@@ -145,8 +145,8 @@ class WhisperASRPipeline:
             prediction_loss_only=CONFIG.training.prediction_loss_only,
             # save_strategy=CONFIG.training.save_strategy,
             save_steps=CONFIG.training.save_steps,
-            save_total_limit=CONFIG.training.save_total_limit,  # Limit checkpoints to save storage
-            save_only_model=CONFIG.training.save_only_model,  # Don't save optimizer states
+            save_total_limit=CONFIG.training.save_total_limit,
+            # save_only_model=CONFIG.training.save_only_model,
             load_best_model_at_end=CONFIG.training.load_best_model_at_end,
             metric_for_best_model=CONFIG.training.metric_for_best_model,
             greater_is_better=CONFIG.training.greater_is_better,

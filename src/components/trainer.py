@@ -25,8 +25,8 @@ class ASRTrainerConfig:
         # predict_with_generate: bool = True,
         generation_max_length: int = 225,
         # save_steps: int = 1000,
-        save_total_limit: int = 2,  # Only keep last N checkpoints
-        save_only_model: bool = True,  # Don't save optimizer states
+        save_total_limit: int = 5,  # Only keep last N checkpoints
+        # save_only_model: bool = True,  # Don't save optimizer states
         eval_steps: int = 1000,
         logging_steps: int = 100,
         report_to: list = None,
@@ -92,7 +92,7 @@ class ASRTrainerConfig:
         self.generation_max_length = generation_max_length
         # self.save_steps = save_steps
         self.save_total_limit = save_total_limit
-        self.save_only_model = save_only_model
+        # self.save_only_model = save_only_model
         self.eval_steps = eval_steps
         self.logging_steps = logging_steps
         self.report_to = report_to if report_to is not None else ["tensorboard"]
@@ -132,7 +132,7 @@ class ASRTrainerConfig:
             generation_max_length=self.generation_max_length,
             # save_steps=self.save_steps,
             save_total_limit=self.save_total_limit,  # Only keep N checkpoints
-            save_only_model=self.save_only_model,  # Don't save optimizer states
+            # save_only_model=self.save_only_model,  # Don't save optimizer states
             eval_steps=self.eval_steps,
             logging_steps=self.logging_steps,
             report_to=self.report_to,
