@@ -7,6 +7,5 @@ tensorboard
 gradio
 python-dotenv
 peft
-mlflow
 pympler
 wandb
