@@ -107,6 +107,8 @@ class TrainingConfig:
     # Checkpointing
     # save_strategy: str = "steps"
     save_steps: int = 500
+    save_total_limit: int = 2  # Only keep last 2 checkpoints to save storage
+    save_only_model: bool = True  # Don't save optimizer states (saves ~50% per checkpoint)
     load_best_model_at_end: bool = True
     
     # Metrics
@@ -165,6 +167,9 @@ class PathConfig:
     # Log directories
     log_dir: str = "./logs"  # Application logs
     wandb_dir: str = "./wandb"  # Weights & Biases logs
+    
+    # Storage optimization
+    disable_dataset_caching: bool = True  # Disable HF dataset caching to save storage
 
 
 @dataclass

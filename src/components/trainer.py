@@ -25,6 +25,8 @@ class ASRTrainerConfig:
         # predict_with_generate: bool = True,
         generation_max_length: int = 225,
         # save_steps: int = 1000,
+        save_total_limit: int = 2,  # Only keep last N checkpoints
+        save_only_model: bool = True,  # Don't save optimizer states
         eval_steps: int = 1000,
         logging_steps: int = 100,
         report_to: list = None,
@@ -42,7 +44,7 @@ class ASRTrainerConfig:
         Initialize training configuration.
 
         Args:
-            run_name: Descriptor for the run (used for logging in wandb, mlflow, tensorboard, etc.)
+            run_name: Descriptor for the run (used for logging in wandb, tensorboard, etc.)
             output_dir: Local directory to save model weights and Hub repository name
             per_device_train_batch_size: Batch size per device during training
             gradient_accumulation_steps: Number of updates steps to accumulate before performing a backward/update pass
@@ -62,7 +64,7 @@ class ASRTrainerConfig:
             save_steps: Save checkpoint every X steps
             eval_steps: Evaluate every X steps
             logging_steps: Log every X steps
-            report_to: List of integrations to report results to (e.g., ["tensorboard", "mlflow"])
+            report_to: List of integrations to report results to (e.g., ["tensorboard", "wandb"])
             load_best_model_at_end: Load the best model at the end of training
             metric_for_best_model: Metric to use for model selection
             greater_is_better: Whether a larger metric value is better
@@ -89,6 +91,8 @@ class ASRTrainerConfig:
         # self.predict_with_generate = predict_with_generate
         self.generation_max_length = generation_max_length
         # self.save_steps = save_steps
+        self.save_total_limit = save_total_limit
+        self.save_only_model = save_only_model
         self.eval_steps = eval_steps
         self.logging_steps = logging_steps
         self.report_to = report_to if report_to is not None else ["tensorboard"]
@@ -127,6 +131,8 @@ class ASRTrainerConfig:
             # predict_with_generate=self.predict_with_generate,
             generation_max_length=self.generation_max_length,
             # save_steps=self.save_steps,
+            save_total_limit=self.save_total_limit,  # Only keep N checkpoints
+            save_only_model=self.save_only_model,  # Don't save optimizer states
             eval_steps=self.eval_steps,
             logging_steps=self.logging_steps,
             report_to=self.report_to,

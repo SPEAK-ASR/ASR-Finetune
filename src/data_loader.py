@@ -4,13 +4,19 @@ Handles loading and preparation of audio datasets from HuggingFace.
 Supports combining multiple datasets into a single DatasetDict.
 """
 
-from datasets import load_dataset, DatasetDict, concatenate_datasets
+import os
+from datasets import load_dataset, DatasetDict, concatenate_datasets, disable_caching
 from typing import Optional, List
 
 from src.utils.logger import setup_logger
 from src.config.config import CONFIG, SingleDatasetConfig
 
 logger = setup_logger(__name__)
+
+# Disable HuggingFace dataset caching to prevent storage bloat during training
+if CONFIG.paths.disable_dataset_caching:
+    disable_caching()
+    logger.info("HuggingFace dataset caching DISABLED to save storage")
 
 
 class WhisperDataLoader:
