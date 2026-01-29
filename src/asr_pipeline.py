@@ -147,7 +147,7 @@ class WhisperASRPipeline:
         logger.info("Fine-tuning complete!")
 
         kwargs = {
-            "dataset_tags": CONFIG.dataset.dataset_name,
+            "dataset_tags": [dataset.dataset_name for dataset in CONFIG.dataset.datasets],
             "dataset": CONFIG.huggingface.pretty_name,  # a 'pretty' name for the training dataset
             "language": "si",
             "dataset_args": CONFIG.huggingface.dataset_args,
