@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Optional, List, Union
 import os
 
-HF_MODEL_ID = "SPEAK-ASR/speak-whisper-small-si-full-dataset"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-fullds-tm4"
 
 @dataclass
 class SingleDatasetConfig:
@@ -42,7 +42,12 @@ class DatasetConfig:
             dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-3",
             train_split="train",
             test_split=None
-        )
+        ),
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/youtube-sinhala-asr-preprocessed",
+            train_split="train",
+            test_split=None
+        ),
     ])
 
     use_auth_token: bool = True
@@ -82,18 +87,18 @@ class TrainingConfig:
     output_dir: str = "checkpoints"
     
     # Training epochs/steps
-    num_train_epochs: int = 3
+    num_train_epochs: int = 5
     # max_steps: int = -1
     
     # Batch sizes
-    per_device_train_batch_size: int = 64
-    per_device_eval_batch_size: int = 4
+    per_device_train_batch_size: int = 32
+    per_device_eval_batch_size: int = 32
     gradient_accumulation_steps: int = 1
     auto_find_batch_size: bool = True
     
     # Learning rate
-    learning_rate: float = 1e-4
-    warmup_steps: int = 500
+    learning_rate: float = 3e-5
+    warmup_steps: int = 200
     # lr_scheduler_type: str = "linear"
 
     # Optimization
@@ -145,7 +150,7 @@ class LoRAConfig:
     """Configuration for LoRA (Low-Rank Adaptation)."""
     r: int = 32
     lora_alpha: int = 64
-    target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
+    target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj", "k_proj", "o_proj"])
     lora_dropout: float = 0.05
     bias: str = "none"
 
