@@ -46,7 +46,7 @@ class DatasetConfig:
         SingleDatasetConfig(
             dataset_name="SPEAK-ASR/youtube-sinhala-asr-preprocessed",
             train_split="train",
-            test_split=None
+            test_split="test"
         ),
     ])
 
@@ -75,7 +75,7 @@ class RuntimeConfig:
     """Configuration for runtime/execution settings."""
     
     # Checkpoint resumption
-    resume_from_checkpoint: Optional[Union[str, bool]] = False  # Path to checkpoint or False
+    resume_from_checkpoint: Optional[Union[str, bool]] = True  # Path to checkpoint or False
 
 
 @dataclass
@@ -109,17 +109,21 @@ class TrainingConfig:
     optim: str = "adamw_torch_fused"
     dataloader_num_workers: int = 8
     dataloader_pin_memory: bool = True
+    dataloader_prefetch_factor: int = 4
+    dataloader_persistent_workers: bool = True
+
+    parallelism_config: str = "auto"  # "auto", "dp", "fsdp", "deepspeed", etc.
     
     # Evaluation
     eval_strategy: str = "steps"
-    eval_steps: int = 1000
+    eval_steps: int = 3000
     predict_with_generate: bool = True
     generation_max_length: int = 256
-    prediction_loss_only: bool = False
-
+    prediction_loss_only: bool = False    
+    batch_eval_metrics: bool = True  # Compute metrics per batch to save memory
     # Checkpointing
     # save_strategy: str = "steps"
-    save_steps: int = 1000
+    save_steps: int = 3000
     save_total_limit: int = 5
     load_best_model_at_end: bool = True
     
