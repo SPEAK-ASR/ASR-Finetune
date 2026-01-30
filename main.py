@@ -31,9 +31,9 @@ def _create_prepared_dataset(token: str, dataset: DatasetDict) -> None:
     dataset = preprocessor.get_dataset()
     logger.info("Preprocessing completed")
 
-    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.model_name})...")
+    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.base_model_name})...")
     pipeline = WhisperASRPipeline(
-        model_name=CONFIG.model.model_name,
+        model_name=CONFIG.model.base_model_name,
         language=CONFIG.model.language,
         task=CONFIG.model.task
     )
@@ -56,9 +56,9 @@ def _create_prepared_dataset(token: str, dataset: DatasetDict) -> None:
 def _finetune_asr_model(token: str, dataset: DatasetDict) -> None:
     logger.info("Starting model fine-tuning process...")
 
-    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.model_name})...")
+    logger.info(f"Initializing Whisper ASR Pipeline (Model: {CONFIG.model.base_model_name})...")
     pipeline = WhisperASRPipeline(
-        model_name=CONFIG.model.model_name,
+        model_name=CONFIG.model.base_model_name,
         language=CONFIG.model.language,
         task=CONFIG.model.task
     )
@@ -113,15 +113,15 @@ def main():
     logger.info(f"Test samples: {len(dataset['test'])}")
     logger.info(f"Dataset structure: {dataset}")
     
-    logger.info(f"Task selected: {CONFIG.dataset.task}")
-    if CONFIG.dataset.task == "prepare_dataset":
+    logger.info(f"Task selected: {CONFIG.runtime.task}")
+    if CONFIG.runtime.task == "prepare_dataset":
         _create_prepared_dataset(token, dataset)
         logger.info("Dataset preparation task completed successfully")
-    elif CONFIG.dataset.task == "finetune_asr_model":
+    elif CONFIG.runtime.task == "finetune_asr_model":
         _finetune_asr_model(token, dataset)
         logger.info("Model fine-tuning task completed successfully")
     else:
-        logger.error(f"Unknown task: {CONFIG.dataset.task}")
+        logger.error(f"Unknown task: {CONFIG.runtime.task}")
         return
     
     logger.info(f"{'=' * 60}\nExecution completed successfully\n{'=' * 60}")
