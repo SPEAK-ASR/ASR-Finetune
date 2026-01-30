@@ -141,7 +141,7 @@ class WhisperASRPipeline:
         
         logger.info("Beginning training...")
         results = trainer.train(
-            resume_from_checkpoint=CONFIG.training.resume_from_checkpoint
+            resume_from_checkpoint=CONFIG.runtime.resume_from_checkpoint
         )
         
         logger.info("Fine-tuning complete!")
