@@ -18,16 +18,19 @@ class TrainingConfig:
     
     # Output and Basic Training Settings
     output_dir: str | None = 'checkpoints'
-    """The output directory where model predictions and checkpoints will be written."""
+    """
+    The output directory where model predictions and checkpoints will be written.
     
-    # do_train: bool = False
-    """Whether to run training. Not directly used by Trainer - intended for training scripts."""
-    
-    # do_eval: bool = False
-    """Whether to run evaluation on the validation set. Will be set to True if eval_strategy is not "no"."""
-    
-    # do_predict: bool = False
-    """Whether to run predictions on the test set. Not directly used by Trainer - intended for evaluation scripts."""
+    >>> do_train: bool = False
+    ...     Whether to run training. 
+    ...     Not directly used by Trainer - intended for training scripts.
+    >>> do_eval: bool = False
+    ...     Whether to run evaluation on the validation set. 
+    ...     Will be set to True if eval_strategy is not "no".
+    >>> do_predict: bool = False
+    ...     Whether to run predictions on the test set. 
+    ...     Not directly used by Trainer - intended for evaluation scripts.
+    """
     
     # Evaluation Settings
     eval_strategy: transformers.trainer_utils.IntervalStrategy | str = 'steps'
@@ -48,7 +51,7 @@ class TrainingConfig:
     Global batch size = per_device_train_batch_size * number_of_devices * gradient_accumulation_steps
     """
     
-    per_device_eval_batch_size: int = 32
+    per_device_eval_batch_size: int = 256
     """The batch size per device for evaluation."""
     
     gradient_accumulation_steps: int = 1
@@ -282,10 +285,10 @@ class TrainingConfig:
     If < 1, interpreted as ratio of total training steps.
     """
     
-    dataloader_num_workers: int = 8
+    dataloader_num_workers: int = 12
     """Number of subprocesses for data loading (PyTorch only). 0 means data loaded in main process."""
     
-    dataloader_prefetch_factor: int | None = 4
+    dataloader_prefetch_factor: int | None = 2
     """
     Number of batches loaded in advance by each worker.
     2 means 2 * num_workers batches prefetched across all workers.
