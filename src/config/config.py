@@ -92,7 +92,7 @@ class TrainingConfig:
     
     # Batch sizes
     per_device_train_batch_size: int = 32
-    per_device_eval_batch_size: int = 32
+    per_device_eval_batch_size: int = 256
     gradient_accumulation_steps: int = 1
     auto_find_batch_size: bool = True
     
@@ -103,14 +103,14 @@ class TrainingConfig:
 
     # Optimization
     # gradient_checkpointing: bool = True
-    # use_cache: bool = False
+    use_cache: bool = True
     fp16: bool = False
     bf16: bool = True
     bf16_full_eval: bool = True
     optim: str = "adamw_torch_fused"
-    dataloader_num_workers: int = 8
+    dataloader_num_workers: int = 12
     dataloader_pin_memory: bool = True
-    dataloader_prefetch_factor: int = 4
+    dataloader_prefetch_factor: int = 2
     dataloader_persistent_workers: bool = True
 
     # parallelism_config: str = "auto"  # for distributed training.
