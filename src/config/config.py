@@ -75,7 +75,7 @@ class RuntimeConfig:
     """Configuration for runtime/execution settings."""
     
     # Checkpoint resumption
-    resume_from_checkpoint: Optional[Union[str, bool]] = False  # Path to checkpoint or False
+    resume_from_checkpoint: Optional[Union[str, bool]] = True  # Path to checkpoint or False
 
 
 @dataclass
