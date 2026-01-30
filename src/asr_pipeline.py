@@ -14,7 +14,6 @@ from src.components.model import ModelComponent
 from src.components.data_collator import DataCollatorComponent
 from src.components.trainer import ASRTrainer
 from src.components.evaluator import ASREvaluator
-from src.config.lora import LoRAConfig
 from src.data_preprocessor import DataPreprocessor
 from src.config.config import CONFIG
 from src.utils.logger import setup_logger
@@ -120,16 +119,6 @@ class WhisperASRPipeline:
         self._ensure_initialized()
         logger.info("Starting fine-tuning workflow...")
         
-        # Configure LoRA if enabled
-        lora_config = None
-        lora_config = LoRAConfig(
-            r=CONFIG.lora.r,
-            lora_alpha=CONFIG.lora.lora_alpha,
-            target_modules=CONFIG.lora.target_modules,
-            lora_dropout=CONFIG.lora.lora_dropout,
-            bias=CONFIG.lora.bias,
-        )
-        
         # Setup data collator
         self._setup_data_collator()
         
@@ -137,7 +126,6 @@ class WhisperASRPipeline:
         trainer = self._create_trainer(
             train_dataset=dataset["train"],
             eval_dataset=dataset["test"],
-            lora_config=lora_config,
         )
         
         logger.info("Beginning training...")
@@ -165,7 +153,6 @@ class WhisperASRPipeline:
         self,
         train_dataset: Dataset,
         eval_dataset: Dataset,
-        lora_config: Optional[LoRAConfig] = None,
     ):
         """Internal method to create trainer."""
         model = self._model.get()
@@ -182,7 +169,6 @@ class WhisperASRPipeline:
             data_collator=data_collator,
             compute_metrics=evaluator.compute_metrics,
             tokenizer=tokenizer,
-            lora_config=lora_config,
         )
         
         return trainer.trainer

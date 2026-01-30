@@ -9,7 +9,8 @@ from datasets import load_dataset, DatasetDict, concatenate_datasets, disable_ca
 from typing import Optional, List
 
 from src.utils.logger import setup_logger
-from src.config.config import CONFIG, SingleDatasetConfig
+from src.config.config import CONFIG
+from src.config.dataset import SingleDatasetConfig
 
 logger = setup_logger(__name__)
 

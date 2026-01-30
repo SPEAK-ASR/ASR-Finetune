@@ -46,12 +46,12 @@ class Config:
     """
     
     # Configuration sections
-    dataset: DatasetConfig = get_dataset_config()
-    model: ModelConfig = get_model_config()
+    dataset: DatasetConfig = field(default_factory=get_dataset_config)
+    model: ModelConfig = field(default_factory=get_model_config)
     runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
-    training: TrainingConfig = get_training_config()
-    lora: LoRAConfig = get_lora_config()
-    huggingface: HuggingFaceConfig = get_huggingface_config()
+    training: TrainingConfig = field(default_factory=get_training_config)
+    lora: LoRAConfig = field(default_factory=get_lora_config)
+    huggingface: HuggingFaceConfig = field(default_factory=get_huggingface_config)
     paths: PathConfig = field(default_factory=PathConfig)
     
 
