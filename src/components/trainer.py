@@ -1,130 +1,131 @@
+"""
+ASR Model Training Module
+
+This module provides a trainer wrapper for Automatic Speech Recognition (ASR) model
+fine-tuning using the Hugging Face Transformers library with optional LoRA 
+(Low-Rank Adaptation) for parameter-efficient fine-tuning.
+
+Classes:
+    ASRTrainer: Main trainer class for ASR model fine-tuning
+"""
+
 from dataclasses import asdict
+from typing import Optional, Union, Callable, Any
+from transformers import (
+    Seq2SeqTrainer,
+    Seq2SeqTrainingArguments,
+    EarlyStoppingCallback,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+)
+from peft import LoraConfig as PEFTLoraConfig, get_peft_model, prepare_model_for_kbit_training
+from torch.utils.data import Dataset
+
 from src.config.config import CONFIG
-from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, EarlyStoppingCallback
-from typing import Optional, Union
-from ..config.lora_config import LoRAConfig, apply_lora_to_model
-
-
-class ASRTrainerConfig:
-    """Configuration for ASR training arguments."""
-
-    def get_training_arguments(self) -> Seq2SeqTrainingArguments:
-        """
-        Create Seq2SeqTrainingArguments from configuration.
-        Automatically passes all TrainingConfig fields to Seq2SeqTrainingArguments.
-
-        Returns:
-            Seq2SeqTrainingArguments object
-        """
-        # Convert TrainingConfig dataclass to dict and pass to Seq2SeqTrainingArguments
-        training_config_dict = asdict(CONFIG.training)
-        return Seq2SeqTrainingArguments(**training_config_dict)
 
 
 class ASRTrainer:
-    """Trainer wrapper for ASR model fine-tuning."""
+    """
+    Trainer wrapper for ASR model fine-tuning with optional LoRA support.
+    
+    This class wraps the Hugging Face Seq2SeqTrainer and provides additional
+    functionality for LoRA-based parameter-efficient fine-tuning.
+    
+    Attributes:
+        model (PreTrainedModel): The model being trained (with or without LoRA)
+        training_args (Seq2SeqTrainingArguments): Training configuration
+        trainer (Seq2SeqTrainer): The underlying Hugging Face trainer
+    
+    Example:
+        >>> asr_trainer = ASRTrainer(
+        ...     model=model,
+        ...     train_dataset=train_data,
+        ...     eval_dataset=eval_data,
+        ...     data_collator=collator,
+        ...     compute_metrics=metric_fn,
+        ...     tokenizer=tokenizer
+        ... )
+        >>> # Access trainer methods directly
+        >>> asr_trainer.trainer.train()
+        >>> asr_trainer.trainer.evaluate()
+        >>> asr_trainer.trainer.save_model("./output")
+    """
 
     def __init__(
         self,
-        model,
-        training_args: Seq2SeqTrainingArguments,
-        train_dataset,
-        eval_dataset,
-        data_collator,
-        compute_metrics,
-        tokenizer,
+        model: PreTrainedModel,
+        train_dataset: Dataset,
+        eval_dataset: Dataset,
+        data_collator: Any,
+        compute_metrics: Callable,
+        tokenizer: PreTrainedTokenizer,
     ):
         """
         Initialize the ASR trainer.
-
+        
         Args:
-            model: The Whisper model to train
-            training_args: Training arguments
+            model: Pre-trained model to fine-tune
             train_dataset: Training dataset
-            eval_dataset: Evaluation dataset
+            eval_dataset: Evaluation/validation dataset
             data_collator: Data collator for batching
             compute_metrics: Function to compute evaluation metrics
-            tokenizer: Feature extractor/tokenizer for processing
+            tokenizer: Tokenizer/processor for the model
+            
+        Note:
+            If CONFIG.lora is not None, LoRA will be automatically applied
+            to the model for parameter-efficient fine-tuning.
         """
+        self.model = model
+        
+        # Apply LoRA if configured
+        if CONFIG.lora is not None:
+            self.model = self._apply_lora_to_model()
+
+        # Set up training arguments from config
+        self.training_args = Seq2SeqTrainingArguments(**asdict(CONFIG.training))
+
+        # Initialize the trainer
         self.trainer = Seq2SeqTrainer(
-            args=training_args,
-            model=model,
+            args=self.training_args,
+            model=self.model,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             data_collator=data_collator,
             compute_metrics=compute_metrics,
             processing_class=tokenizer,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=CONFIG.runtime.early_stopping_patience)],
         )
 
-        model.config.use_cache = False
-
-    def train(self, resume_from_checkpoint: Optional[Union[str, bool]] = None):
-        """Start the training process."""
-        # Use provided value or fall back to config
-        checkpoint = resume_from_checkpoint if resume_from_checkpoint is not None else CONFIG.runtime.resume_from_checkpoint
-        return self.trainer.train(resume_from_checkpoint=checkpoint)
-
-    def evaluate(self):
-        """Evaluate the model."""
-        return self.trainer.evaluate()
-
-    def save_model(self, output_dir: Optional[str] = None):
+    def _apply_lora_to_model(self) -> PreTrainedModel:
         """
-        Save the trained model.
-
-        Args:
-            output_dir: Directory to save the model. If None, uses the default output directory.
+        Apply LoRA to the model for parameter-efficient fine-tuning.
+        
+        This method:
+        1. Prepares the model for k-bit training (freezes base parameters)
+        2. Applies LoRA adapters based on the configuration
+        3. Prints information about trainable parameters
+        
+        Returns:
+            PreTrainedModel: Model with LoRA applied
+            
+        Raises:
+            ValueError: If CONFIG.lora is None or invalid
+            
+        Note:
+            LoRA significantly reduces memory usage and training time by only
+            training a small number of additional parameters while keeping
+            the base model frozen.
         """
-        self.trainer.save_model(output_dir)
-
-    def push_to_hub(self, commit_message: Optional[str] = None, **kwargs):
-        """
-        Push the model to Hugging Face Hub.
-
-        Args:
-            commit_message: Commit message for the push
-            **kwargs: Additional model card kwargs (dataset_tags, dataset, language, etc.)
-        """
-        self.trainer.push_to_hub(commit_message=commit_message, **kwargs)
-
-
-def create_trainer(
-    model,
-    train_dataset,
-    eval_dataset,
-    data_collator,
-    compute_metrics,
-    tokenizer,
-    lora_config: Optional[LoRAConfig] = None,
-) -> ASRTrainer:
-    """
-    Factory function to create an ASR trainer.
-
-    Args:
-        model: The Whisper model to train
-        train_dataset: Training dataset
-        eval_dataset: Evaluation dataset
-        data_collator: Data collator for batching
-        compute_metrics: Function to compute evaluation metrics
-        tokenizer: Tokenizer for processing
-        lora_config: LoRA configuration. If provided, applies LoRA to the model
-
-    Returns:
-        ASRTrainer instance
-    """
-    # Apply LoRA if configuration is provided
-    if lora_config is not None:
-        model = apply_lora_to_model(model, lora_config)
-
-    training_args = ASRTrainerConfig().get_training_arguments()
-
-    return ASRTrainer(
-        model=model,
-        training_args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics,
-        tokenizer=tokenizer,
-    )
+        # Prepare model for training (freezes base model parameters)
+        self.model = prepare_model_for_kbit_training(self.model)
+        
+        # Create PEFT config from the LoRA configuration
+        peft_config = PEFTLoraConfig(**asdict(CONFIG.lora))
+        
+        # Apply LoRA to the model
+        self.model = get_peft_model(self.model, peft_config)
+        
+        # Print trainable parameters info for verification
+        self.model.print_trainable_parameters()
+            
+        return self.model

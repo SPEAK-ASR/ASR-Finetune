@@ -3,6 +3,7 @@ ASR Pipeline Facade for Whisper fine-tuning.
 Provides a simplified interface for the complete fine-tuning workflow.
 """
 
+from dataclasses import asdict
 from typing import Optional
 from datasets import DatasetDict, Dataset
 
@@ -11,9 +12,9 @@ from src.components.tokenizer import TokenizerComponent
 from src.components.processor import ProcessorComponent
 from src.components.model import ModelComponent
 from src.components.data_collator import DataCollatorComponent
-from src.components.trainer import create_trainer, ASRTrainerConfig
+from src.components.trainer import ASRTrainer
 from src.components.evaluator import ASREvaluator
-from src.config.lora_config import LoRAConfig
+from src.config.lora import LoRAConfig
 from src.data_preprocessor import DataPreprocessor
 from src.config.config import CONFIG
 from src.utils.logger import setup_logger
@@ -146,16 +147,7 @@ class WhisperASRPipeline:
         
         logger.info("Fine-tuning complete!")
 
-        kwargs = {
-            "dataset_tags": [dataset.dataset_name for dataset in CONFIG.dataset.datasets],
-            "dataset": CONFIG.huggingface.pretty_name,  # a 'pretty' name for the training dataset
-            "language": "si",
-            "dataset_args": CONFIG.huggingface.dataset_args,
-            "model_name": CONFIG.huggingface.model_name,  # a 'pretty' name for your model
-            "finetuned_from": CONFIG.model.model_name,
-            "tasks": CONFIG.huggingface.tasks,
-        }
-        trainer.push_to_hub(**kwargs)
+        trainer.push_to_hub(**asdict(CONFIG.huggingface))
         logger.info("Model pushed to HuggingFace Hub")
 
         return results
@@ -182,8 +174,8 @@ class WhisperASRPipeline:
         tokenizer = self._tokenizer.get()
         
         evaluator = ASREvaluator(tokenizer)
-        
-        return create_trainer(
+
+        trainer = ASRTrainer(
             model=model,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
@@ -192,6 +184,8 @@ class WhisperASRPipeline:
             tokenizer=tokenizer,
             lora_config=lora_config,
         )
+        
+        return trainer.trainer
     
     def _ensure_initialized(self):
         """Ensure pipeline is initialized before operations."""
