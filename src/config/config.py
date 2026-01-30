@@ -106,19 +106,21 @@ class TrainingConfig:
     # use_cache: bool = False
     fp16: bool = False
     bf16: bool = True
+    bf16_full_eval: bool = True
     optim: str = "adamw_torch_fused"
     dataloader_num_workers: int = 8
     dataloader_pin_memory: bool = True
     dataloader_prefetch_factor: int = 4
     dataloader_persistent_workers: bool = True
 
-    parallelism_config: str = "auto"  # "auto", "dp", "fsdp", "deepspeed", etc.
+    # parallelism_config: str = "auto"  # for distributed training.
     
     # Evaluation
     eval_strategy: str = "steps"
     eval_steps: int = 3000
     predict_with_generate: bool = True
     generation_max_length: int = 256
+    generation_num_beams: int = 1
     prediction_loss_only: bool = False    
     batch_eval_metrics: bool = True  # Compute metrics per batch to save memory
     # Checkpointing
@@ -128,7 +130,7 @@ class TrainingConfig:
     load_best_model_at_end: bool = True
     
     # Metrics
-    metric_for_best_model: str = "eval_loss"
+    metric_for_best_model: str = "wer"
     greater_is_better: bool = False
     
     # Logging
