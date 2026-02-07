@@ -165,10 +165,10 @@ print_info "Training logs will be written to: logs/training.log"
 print_info "Monitor with: tail -f logs/training.log"
 echo "" | tee -a "$LOG_FILE"
 
-log "Executing: python main.py"
+log "Executing: accelerate launch --multi_gpu --num_processes=2 main.py"
 
 # Launch training and capture exit code
-python main.py 2>&1 | tee -a logs/training.log
+accelerate launch --multi_gpu --num_processes=2 main.py 2>&1 | tee -a logs/training.log
 EXIT_CODE=${PIPESTATUS[0]}
 
 # Log completion
