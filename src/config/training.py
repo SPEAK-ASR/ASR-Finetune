@@ -433,7 +433,7 @@ class TrainingConfig:
     If None, logs to local directory. Space is public unless hub_private_repo=True.
     """
     
-    # ddp_find_unused_parameters: bool | None = None
+    ddp_find_unused_parameters: bool | None = False
     """
     In distributed training, value of find_unused_parameters flag passed to DistributedDataParallel.
     Defaults to False if gradient checkpointing used, True otherwise.
