@@ -102,7 +102,7 @@ class TrainingConfig:
     If not an integer, will perform the decimal part of the last epoch before stopping.
     """
     
-    # max_steps: int = -1
+    max_steps: int = 18000
     """
     If set to positive number, total number of training steps to perform.
     Overrides num_train_epochs. Training continues through dataset until max_steps is reached.
