@@ -118,7 +118,7 @@ class TrainingConfig:
     # warmup_ratio: float | None = None
     """Ratio of total training steps used for linear warmup from 0 to learning_rate."""
     
-    warmup_steps: float = 200
+    warmup_steps: float = 1000
     """
     Number of steps for linear warmup from 0 to learning_rate.
     If < 1, interpreted as ratio of total training steps.
