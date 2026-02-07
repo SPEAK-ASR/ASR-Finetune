@@ -51,7 +51,7 @@ class TrainingConfig:
     Global batch size = per_device_train_batch_size * number_of_devices * gradient_accumulation_steps
     """
     
-    per_device_eval_batch_size: int = 256
+    per_device_eval_batch_size: int = 32
     """The batch size per device for evaluation."""
     
     gradient_accumulation_steps: int = 1
