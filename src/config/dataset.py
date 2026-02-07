@@ -41,6 +41,7 @@ class DatasetConfig:
 
     use_auth_token: bool = True
     keep_in_memory: bool = False  # Whether to load datasets into memory
+    streaming: bool = True  # Whether to use dataset streaming to reduce loading time
 
     # Audio preprocessing
     sample_rate: int = 16000

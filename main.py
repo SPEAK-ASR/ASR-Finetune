@@ -109,8 +109,11 @@ def main():
     dataset = data_loader.load_datasets()
 
     logger.info(f"Dataset loaded successfully")
-    logger.info(f"Train samples: {len(dataset['train'])}")
-    logger.info(f"Test samples: {len(dataset['test'])}")
+    if CONFIG.dataset.streaming:
+        logger.info("Dataset is in streaming mode - samples will be loaded on-the-fly during training")
+    else:
+        logger.info(f"Train samples: {len(dataset['train'])}")
+        logger.info(f"Test samples: {len(dataset['test'])}")
     logger.info(f"Dataset structure: {dataset}")
     
     logger.info(f"Task selected: {CONFIG.runtime.task}")
