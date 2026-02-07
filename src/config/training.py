@@ -4,7 +4,7 @@ from typing import Any
 import transformers
 import accelerate
 
-HF_MODEL_ID = "SPEAK-ASR/whisper-si-fullds-tm4"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-6"
 
 @dataclass
 class TrainingConfig:
@@ -96,7 +96,7 @@ class TrainingConfig:
     """Maximum gradient norm for gradient clipping."""
     
     # Training Duration Settings
-    num_train_epochs: float = 5.0
+    num_train_epochs: float = 15.0
     """
     Total number of training epochs to perform.
     If not an integer, will perform the decimal part of the last epoch before stopping.
@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 3000
+    save_steps: float = 1000
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -485,7 +485,7 @@ class TrainingConfig:
     Defaults to user_name/output_dir_name.
     """
     
-    hub_strategy: transformers.trainer_utils.HubStrategy | str = 'checkpoint'
+    # hub_strategy: transformers.trainer_utils.HubStrategy | str = 'checkpoint'
     """
     Defines scope of what is pushed to Hub and when:
     - "end": Push model, config, tokenizer, and model card on save_model()

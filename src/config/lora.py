@@ -7,7 +7,7 @@ class LoRAConfig:
     """Configuration for LoRA (Low-Rank Adaptation)."""
     r: int = 32
     lora_alpha: int = 64
-    target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj", "k_proj", "o_proj"])
+    target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     lora_dropout: float = 0.05
     bias: str = "none"
 
