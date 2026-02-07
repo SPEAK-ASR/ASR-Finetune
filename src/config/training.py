@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 100
+    save_steps: float = 3000
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -278,7 +278,7 @@ class TrainingConfig:
     # dataloader_drop_last: bool = False
     """Whether to drop the last incomplete batch if dataset length isn't divisible by batch size."""
     
-    eval_steps: float | None = 100
+    eval_steps: float | None = 3000
     """
     Number of update steps between two evaluations if eval_strategy="steps".
     Defaults to same value as logging_steps if not set.
@@ -433,7 +433,7 @@ class TrainingConfig:
     If None, logs to local directory. Space is public unless hub_private_repo=True.
     """
     
-    ddp_find_unused_parameters: bool | None = None
+    ddp_find_unused_parameters: bool | None = False
     """
     In distributed training, value of find_unused_parameters flag passed to DistributedDataParallel.
     Defaults to False if gradient checkpointing used, True otherwise.
