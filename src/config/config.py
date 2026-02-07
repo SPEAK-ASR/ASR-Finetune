@@ -23,7 +23,7 @@ class RuntimeConfig:
     task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
     
     # Checkpoint resumption
-    resume_from_checkpoint: Optional[Union[str, bool]] = True
+    resume_from_checkpoint: Optional[Union[str, bool]] = False
     early_stopping_patience: int = 3
 
 
