@@ -8,16 +8,16 @@ logger = setup_logger(__name__)
 import dotenv
 logger.info("Loading environment variables...")
 dotenv.load_dotenv()
-logger.info("Importing dependencies...")
+
+from src.config.config import CONFIG
+logger.info(f"Cache configured: datasets={CONFIG.paths.cache_dir}, models={CONFIG.paths.model_cache_dir}")
 
 from datasets import DatasetDict
-
 from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
 from src.asr_pipeline import WhisperASRPipeline
 from src.config.wandb_config import WandbAuthenticator
-from src.config.config import CONFIG
 
 logger.info("All dependencies loaded successfully")
 

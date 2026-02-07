@@ -3,6 +3,8 @@ Centralized Configuration Management for Whisper ASR Fine-tuning.
 This module provides a comprehensive configuration system for all constants and parameters.
 """
 
+import os
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Literal, Optional, Union
 
@@ -36,6 +38,45 @@ class PathConfig:
     # Log directories
     log_dir: str = "./logs"  # Application logs
     wandb_dir: str = "./wandb"  # Weights & Biases logs
+    
+    def __post_init__(self):
+        """Initialize paths and set environment variables for HuggingFace caching."""
+        # Create directories if they don't exist
+        self._ensure_directories_exist()
+        
+        # Set HuggingFace environment variables to use our centralized cache paths
+        self._configure_huggingface_cache()
+    
+    def _ensure_directories_exist(self) -> None:
+        """Create all configured directories if they don't exist."""
+        directories = [
+            self.cache_dir,
+            self.model_cache_dir,
+            self.log_dir,
+            self.wandb_dir
+        ]
+        
+        for directory in directories:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+    
+    def _configure_huggingface_cache(self) -> None:
+        """Set HuggingFace environment variables to respect our cache configuration.
+        
+        This ensures that all HuggingFace operations (datasets, models, tokenizers)
+        use our centralized cache paths, even if not explicitly passed as parameters.
+        This is crucial for cloud deployments with persistent volumes.
+        """
+        # Convert to absolute paths for reliability
+        abs_cache_dir = str(Path(self.cache_dir).resolve())
+        abs_model_cache_dir = str(Path(self.model_cache_dir).resolve())
+        
+        # HuggingFace Datasets cache
+        os.environ['HF_DATASETS_CACHE'] = abs_cache_dir
+        
+        # HuggingFace Hub cache (models, tokenizers, configs)
+        os.environ['HF_HOME'] = abs_model_cache_dir
+        os.environ['TRANSFORMERS_CACHE'] = abs_model_cache_dir
+        os.environ['HF_HUB_CACHE'] = abs_model_cache_dir
 
 
 @dataclass
