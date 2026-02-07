@@ -3,3 +3,16 @@
 __pycache__/
 .ipynb_checkpoints
 *.db
+
+# Vast.ai runtime files
+.vastai_setup_complete
+vast_startup.log
+
+# Training artifacts
+cache/
+models/
+logs/
+wandb/
+checkpoints/
+
+.claude/
