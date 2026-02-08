@@ -34,6 +34,14 @@ class DataCollatorSpeechSeq2SeqWithPadding:
         input_features = [{"input_features": feature["input_features"]} for feature in features]
         batch = self.processor.feature_extractor.pad(input_features, return_tensors="pt")
 
+        # Create explicit attention_mask for input_features to avoid pad/eos ambiguity
+        # For Whisper audio features, all frames are real (not padded in time dimension)
+        # Shape: (batch_size, sequence_length) where sequence_length is the time dimension
+        batch["attention_mask"] = torch.ones(
+            batch["input_features"].shape[:-1],  # (batch_size, sequence_length)
+            dtype=torch.long
+        )
+
         # get the tokenized label sequences
         label_features = [{"input_ids": feature["labels"]} for feature in features]
         # pad the labels to max length
