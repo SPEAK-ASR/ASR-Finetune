@@ -20,7 +20,7 @@ class RuntimeConfig:
     """Configuration for runtime/execution settings."""
     
     # task can be either prepare_dataset or finetune_asr_model
-    task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
+    task: Literal["prepare_dataset", "finetune_asr_model"] = "prepare_dataset"
     
     # Checkpoint resumption
     resume_from_checkpoint: Optional[Union[str, bool]] = True
