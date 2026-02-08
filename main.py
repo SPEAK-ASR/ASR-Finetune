@@ -13,6 +13,7 @@ from src.config.config import CONFIG
 logger.info(f"Cache configured: datasets={CONFIG.paths.cache_dir}, models={CONFIG.paths.model_cache_dir}")
 
 from datasets import DatasetDict
+from src.config.dataset import get_dataset_names
 from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
@@ -44,7 +45,7 @@ def _create_prepared_dataset(token: str, dataset: DatasetDict) -> None:
     prepared_dataset = pipeline.prepare_data(dataset)
     logger.info("Dataset preparation completed")
 
-    repo_name = f"{CONFIG.dataset.dataset_name}-preprocessed"
+    repo_name = f"{get_dataset_names()[0]}-preprocessed"
     logger.info(f"Pushing prepared dataset to Hub: {repo_name}")
     prepared_dataset.push_to_hub(
         repo_name,
