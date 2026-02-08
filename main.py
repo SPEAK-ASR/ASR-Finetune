@@ -93,14 +93,15 @@ def main():
     logger.info("Successfully authenticated with HuggingFace")
 
     # Authenticate with Weights & Biases
-    logger.info("Authenticating with Weights & Biases...")
-    wandb_api_key = WandbAuthenticator.get_api_key_from_env()
-    wandb_authenticator = WandbAuthenticator(api_key=wandb_api_key)
-    if not wandb_authenticator.authenticate():
-        logger.error("W&B Authentication failed. Exiting.")
-        return
-    run = wandb_authenticator.init_run(project=f"whisper-finetune-sinhala", entity="SPEAK-ASR-uom")
-    logger.info("Successfully initialized W&B")
+    if CONFIG.runtime.task == "finetune_asr_model":
+        logger.info("Authenticating with Weights & Biases...")
+        wandb_api_key = WandbAuthenticator.get_api_key_from_env()
+        wandb_authenticator = WandbAuthenticator(api_key=wandb_api_key)
+        if not wandb_authenticator.authenticate():
+            logger.error("W&B Authentication failed. Exiting.")
+            return
+        run = wandb_authenticator.init_run(project=f"whisper-finetune-sinhala", entity="SPEAK-ASR-uom")
+        logger.info("Successfully initialized W&B")
     
     # Load dataset(s)
     dataset_names = [ds.dataset_name for ds in CONFIG.dataset.datasets]
