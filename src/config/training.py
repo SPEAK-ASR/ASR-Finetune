@@ -4,7 +4,7 @@ from typing import Any
 import transformers
 import accelerate
 
-HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-6"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-7"
 
 @dataclass
 class TrainingConfig:
@@ -96,7 +96,7 @@ class TrainingConfig:
     """Maximum gradient norm for gradient clipping."""
     
     # Training Duration Settings
-    num_train_epochs: float = 15.0
+    num_train_epochs: float = 20.0
     """
     Total number of training epochs to perform.
     If not an integer, will perform the decimal part of the last epoch before stopping.
