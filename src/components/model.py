@@ -2,9 +2,15 @@
 Model component for Whisper ASR.
 """
 
+import warnings
 from transformers import WhisperForConditionalGeneration
 from src.utils.logger import setup_logger
 from src.config.config import CONFIG
+
+warnings.filterwarnings(
+    "ignore",
+    message="A custom logits processor of type .*SuppressTokensLogitsProcessor.*",
+)
 
 logger = setup_logger(__name__)
 
@@ -45,6 +51,10 @@ class ModelComponent:
             self.model.generation_config.language = self.language.lower()
             self.model.generation_config.task = self.task
             self.model.generation_config.forced_decoder_ids = None
+            self.model.generation_config.suppress_tokens = None
+            self.model.generation_config.begin_suppress_tokens = None
+
+            self.model.generation_config._from_model_config = False
             
             logger.info(
                 f"Model loaded successfully with language={self.language}, "
