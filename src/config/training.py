@@ -260,7 +260,7 @@ class TrainingConfig:
     Experimental API that may change.
     """
     
-    # local_rank: int = -1
+    local_rank: int = -1
     """Local rank for distributed training. Set automatically by launch script."""
     
     # Distributed Training Settings
