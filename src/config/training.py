@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 3000
+    save_steps: float = 1500
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -278,7 +278,7 @@ class TrainingConfig:
     # dataloader_drop_last: bool = False
     """Whether to drop the last incomplete batch if dataset length isn't divisible by batch size."""
     
-    eval_steps: float | None = 3000
+    eval_steps: float | None = 1500
     """
     Number of update steps between two evaluations if eval_strategy="steps".
     Defaults to same value as logging_steps if not set.
