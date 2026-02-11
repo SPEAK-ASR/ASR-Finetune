@@ -2,6 +2,7 @@
 Model component for Whisper ASR.
 """
 
+import torch
 from transformers import WhisperForConditionalGeneration
 from src.utils.logger import setup_logger
 from src.config.config import CONFIG
@@ -36,6 +37,8 @@ class ModelComponent:
         logger.info(f"Loading Whisper model from {self.model_name}...")
         
         try:
+            # Load model in float32 by default
+            # The Trainer will handle dtype conversion for bf16/fp16 training automatically
             self.model = WhisperForConditionalGeneration.from_pretrained(
                 self.model_name,
                 cache_dir=CONFIG.paths.model_cache_dir
@@ -45,6 +48,10 @@ class ModelComponent:
             self.model.generation_config.language = self.language.lower()
             self.model.generation_config.task = self.task
             self.model.generation_config.forced_decoder_ids = None
+            
+            # Set pad_token_id to avoid attention_mask warnings during generation
+            if self.model.config.pad_token_id is None:
+                self.model.config.pad_token_id = self.model.config.eos_token_id
             
             logger.info(
                 f"Model loaded successfully with language={self.language}, "
