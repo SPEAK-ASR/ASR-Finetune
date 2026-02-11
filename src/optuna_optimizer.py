@@ -20,8 +20,8 @@ from typing import Any
 import optuna
 import torch
 from datasets import DatasetDict
-from optuna.integration.transformers import OptunaCallback
 from optuna.storages import JournalFileStorage, JournalStorage
+from transformers import TrainerCallback
 
 from src.asr_pipeline import WhisperASRPipeline
 from src.config.config import CONFIG
@@ -80,6 +80,27 @@ SEARCH_SPACE: list[dict[str, Any]] = [
     #     "log": True,
     # },
 ]
+
+
+class OptunaCallback(TrainerCallback):
+    """Custom callback to integrate Optuna with Transformers Trainer.
+    
+    Reports metrics to Optuna and enables pruning of unpromising trials.
+    """
+
+    def __init__(self, trial: optuna.Trial, metric: str = "eval_wer"):
+        self.trial = trial
+        self.metric = metric
+
+    def on_evaluate(self, args, state, control, metrics, **kwargs):
+        """Report metric to Optuna after each evaluation."""
+        if self.metric in metrics:
+            # Report the metric value at the current step
+            self.trial.report(metrics[self.metric], state.global_step)
+            
+            # Check if trial should be pruned
+            if self.trial.should_prune():
+                raise optuna.TrialPruned()
 
 
 def _suggest_params(
