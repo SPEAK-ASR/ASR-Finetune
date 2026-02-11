@@ -18,6 +18,7 @@ from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
 from src.asr_pipeline import WhisperASRPipeline
 from src.config.wandb_config import WandbAuthenticator
+from src.optuna_optimizer import OptunaOptimizer
 
 logger.info("All dependencies loaded successfully")
 
@@ -75,6 +76,19 @@ def _finetune_asr_model(token: str, dataset: DatasetDict) -> None:
     logger.info(f"Final results: {results}")
     logger.info(f"{'=' * 40}")
 
+def _optuna_optimize(dataset: DatasetDict) -> None:
+    logger.info("Starting Optuna hyperparameter optimization...")
+    logger.info(f"Trials: {CONFIG.runtime.optuna_n_trials} | "
+                f"Epochs/trial: {CONFIG.runtime.optuna_trial_epochs}")
+
+    optimizer = OptunaOptimizer(dataset)
+    study = optimizer.run()
+
+    logger.info(f"{'=' * 40}")
+    logger.info("Optimization Results:")
+    logger.info(f"Best WER: {study.best_value:.4f}")
+    logger.info(f"Best params: {study.best_params}")
+    logger.info(f"{'=' * 40}")
 
 
 def main():
@@ -120,6 +134,9 @@ def main():
     elif CONFIG.runtime.task == "finetune_asr_model":
         _finetune_asr_model(token, dataset)
         logger.info("Model fine-tuning task completed successfully")
+    elif CONFIG.runtime.task == "optuna_optimize":
+        _optuna_optimize(dataset)
+        logger.info("Optuna optimization task completed successfully")
     else:
         logger.error(f"Unknown task: {CONFIG.runtime.task}")
         return

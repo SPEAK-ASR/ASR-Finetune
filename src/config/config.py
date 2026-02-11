@@ -19,12 +19,16 @@ from src.config.model import ModelConfig, get_model_config
 class RuntimeConfig:
     """Configuration for runtime/execution settings."""
     
-    # task can be either prepare_dataset or finetune_asr_model
-    task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
+    # task can be prepare_dataset, finetune_asr_model, or optuna_optimize
+    task: Literal["prepare_dataset", "finetune_asr_model", "optuna_optimize"] = "optuna_optimize"
     
     # Checkpoint resumption
     resume_from_checkpoint: Optional[Union[str, bool]] = False
     early_stopping_patience: int = 3
+    
+    # Optuna hyperparameter optimization settings
+    optuna_n_trials: int = 50
+    optuna_trial_epochs: float = 1.0
 
 
 @dataclass

@@ -9,3 +9,6 @@ python-dotenv
 peft
 pympler
 wandb
+optuna
+optuna-integration[transformers]
+optuna-dashboard
