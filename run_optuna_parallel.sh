@@ -21,6 +21,11 @@ if [[ "$NUM_GPUS" -eq 0 ]]; then
     exit 1
 fi
 
+if [[ "$NUM_GPUS" -eq 1 ]]; then
+    echo "INFO: Only 1 GPU detected. Running all $TOTAL_TRIALS trials sequentially."
+    echo "      (You can also run directly: python main.py)"
+fi
+
 TRIALS_PER_WORKER=$(( (TOTAL_TRIALS + NUM_GPUS - 1) / NUM_GPUS ))  # ceil division
 
 echo "============================================================"
