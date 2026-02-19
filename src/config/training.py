@@ -151,7 +151,7 @@ class TrainingConfig:
     logging_first_step: bool = True
     """Whether to log the first global_step."""
     
-    logging_steps: float = 100
+    logging_steps: float = 50
     """
     Number of update steps between two logs if logging_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 3000
+    save_steps: float = 500
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -282,7 +282,7 @@ class TrainingConfig:
     # dataloader_drop_last: bool = False
     """Whether to drop the last incomplete batch if dataset length isn't divisible by batch size."""
     
-    eval_steps: float | None = 3000
+    eval_steps: float | None = 500
     """
     Number of update steps between two evaluations if eval_strategy="steps".
     Defaults to same value as logging_steps if not set.
@@ -468,7 +468,7 @@ class TrainingConfig:
     """
     
     # Hub Settings
-    push_to_hub: bool = True
+    push_to_hub: bool = False
     """
     Whether to push model to Hub every time model is saved.
     output_dir will be git directory synced with repo (determined by hub_model_id).
