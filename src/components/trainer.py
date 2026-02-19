@@ -18,7 +18,7 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizer,
 )
-from peft import LoraConfig as PEFTLoraConfig, get_peft_model
+from peft import LoraConfig as PEFTLoraConfig, get_peft_model, prepare_model_for_kbit_training
 from torch.utils.data import Dataset
 
 from src.config.config import CONFIG
@@ -101,8 +101,9 @@ class ASRTrainer:
         Apply LoRA to the model for parameter-efficient fine-tuning.
         
         This method:
-        1. Applies LoRA adapters based on the configuration
-        2. Prints information about trainable parameters
+        1. Prepares the model for k-bit training (freezes base parameters)
+        2. Applies LoRA adapters based on the configuration
+        3. Prints information about trainable parameters
         
         Returns:
             PreTrainedModel: Model with LoRA applied
@@ -114,11 +115,10 @@ class ASRTrainer:
             LoRA significantly reduces memory usage and training time by only
             training a small number of additional parameters while keeping
             the base model frozen.
-            
-            prepare_model_for_kbit_training is NOT used because it's designed for
-            quantized models (8-bit/4-bit). For regular bf16/fp16 training, we
-            apply LoRA directly and let the Trainer handle mixed precision.
         """
+        # Prepare model for training (freezes base model parameters)
+        self.model = prepare_model_for_kbit_training(self.model)
+        
         # Create PEFT config from the LoRA configuration
         peft_config = PEFTLoraConfig(**asdict(CONFIG.lora))
         
