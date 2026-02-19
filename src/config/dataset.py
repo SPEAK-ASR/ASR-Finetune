@@ -17,11 +17,11 @@ class DatasetConfig:
     # Each dataset has: dataset_name, train_split, test_split
     # All datasets will be combined into a single DatasetDict
     datasets: List[SingleDatasetConfig] = field(default_factory=lambda: [
-        # SingleDatasetConfig(
-        #     dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed",
-        #     train_split="train[:35%]",  # Use only 35% of the training data for training
-        #     test_split="test[:20%]"    # Use only 20% of the test data for evaluation
-        # ),
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed",
+            train_split="train[:35%]",  # Use only 35% of the training data for training
+            test_split="test[:20%]"    # Use only 20% of the test data for evaluation
+        ),
         # SingleDatasetConfig(
         #     dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed-2",
         #     train_split="train",
