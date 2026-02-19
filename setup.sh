@@ -34,7 +34,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 
 # Step 1: Update apt library
-print_step "Step 1/6: Updating apt package lists..."
+print_step "Step 1/4: Updating apt package lists..."
 if apt update -y; then
     print_success "Package lists updated"
 else
@@ -44,7 +44,7 @@ fi
 echo ""
 
 # Step 2: Install nano and ffmpeg
-print_step "Step 2/6: Installing nano and ffmpeg..."
+print_step "Step 2/4: Installing nano and ffmpeg..."
 if apt install -y nano ffmpeg; then
     print_success "nano and ffmpeg installed"
 else
@@ -54,7 +54,7 @@ fi
 echo ""
 
 # Step 3: Create .env file with HF token
-print_step "Step 3/6: Setting up .env file with HuggingFace token..."
+print_step "Step 3/4: Setting up .env file with HuggingFace token..."
 
 # Check if .env already exists
 if [ -f ".env" ]; then
@@ -101,31 +101,8 @@ fi
 
 echo ""
 
-# Step 4: Create Python virtual environment
-print_step "Step 4/6: Setting up Python virtual environment..."
-
-VENV_DIR=".venv"
-
-if [ -d "$VENV_DIR" ]; then
-    print_warning "Virtual environment already exists at $VENV_DIR"
-    read -p "Do you want to recreate it? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_warning "Removing existing virtual environment..."
-        rm -rf "$VENV_DIR"
-        python -m venv "$VENV_DIR"
-        print_success "Virtual environment recreated"
-    else
-        print_warning "Using existing virtual environment"
-    fi
-else
-    python -m venv "$VENV_DIR"
-    print_success "Virtual environment created at $VENV_DIR"
-fi
-echo ""
-
 # Step 5: Activate virtual environment and install packages
-print_step "Step 5/6: Installing Python packages from requirements.txt..."
+print_step "Step 4/4: Installing Python packages from requirements.txt..."
 
 # Activate virtual environment
 source "$VENV_DIR/bin/activate"
