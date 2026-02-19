@@ -104,10 +104,6 @@ echo ""
 # Step 5: Activate virtual environment and install packages
 print_step "Step 4/4: Installing Python packages from requirements.txt..."
 
-# Activate virtual environment
-source "$VENV_DIR/bin/activate"
-print_success "Virtual environment activated"
-
 # Upgrade pip
 print_step "Upgrading pip..."
 pip install --upgrade pip
