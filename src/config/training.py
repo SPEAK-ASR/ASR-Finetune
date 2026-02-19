@@ -241,10 +241,14 @@ class TrainingConfig:
     # fp16: bool = False
     """Whether to use fp16 16-bit (mixed) precision training instead of 32-bit."""
     
-    bf16_full_eval: bool = True
+    bf16_full_eval: bool = False
     """
     Whether to use full bfloat16 evaluation instead of 32-bit.
     Faster and saves memory but can harm metric values.
+    NOTE: Must be False when bf16=True (AMP training). Setting this True
+    literally casts model weights to bf16, causing dtype mismatch with fp32
+    inputs during generate() which runs outside the autocast context.
+    With bf16=True, AMP autocast already handles eval passes correctly.
     """
     
     # fp16_full_eval: bool = False
