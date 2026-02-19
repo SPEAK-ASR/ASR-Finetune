@@ -10,6 +10,10 @@
 # Each worker runs main.py with task=optuna_optimize, pinned to a single GPU
 # via CUDA_VISIBLE_DEVICES.  All workers share the same Optuna study through
 # a JournalFileStorage file (logs/optuna_journal.log).
+#
+# Workers run fully detached (survives terminal close).
+# To stop all workers:  bash stop_optuna.sh
+# To monitor progress:  tail -f logs/optuna_worker_gpu0.log
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -35,39 +39,38 @@ echo "  GPUs         : $NUM_GPUS"
 echo "  Trials/worker: $TRIALS_PER_WORKER"
 echo "============================================================"
 
-# Remove stale journal so we start a fresh study
-rm -f logs/optuna_journal.log
+# Ensure logs directory exists
+mkdir -p logs
 
-PIDS=()
+# Remove stale journal and PID file so we start a fresh study
+rm -f logs/optuna_journal.log logs/optuna_workers.pid
 
 for GPU_ID in $(seq 0 $((NUM_GPUS - 1))); do
     echo "Launching worker on GPU $GPU_ID ..."
 
-    CUDA_VISIBLE_DEVICES="$GPU_ID" \
-    OPTUNA_TRIALS_PER_WORKER="$TRIALS_PER_WORKER" \
-        python main.py \
-        > "logs/optuna_worker_gpu${GPU_ID}.log" 2>&1 &
+    # setsid creates a new process group so the worker is fully independent.
+    # nohup keeps it alive after the terminal closes.
+    # The PGID equals the PID of the setsid child, so we can kill -PGID later.
+    setsid nohup bash -c "
+        export CUDA_VISIBLE_DEVICES=${GPU_ID}
+        export OPTUNA_TRIALS_PER_WORKER=${TRIALS_PER_WORKER}
+        exec python main.py
+    " >> "logs/optuna_worker_gpu${GPU_ID}.log" 2>&1 &
 
-    PIDS+=($!)
+    echo $! >> logs/optuna_workers.pid
 done
 
-echo "All workers launched. PIDs: ${PIDS[*]}"
-echo "Logs: logs/optuna_worker_gpu<N>.log"
-echo "Waiting for all workers to finish ..."
-
-FAIL=0
-for PID in "${PIDS[@]}"; do
-    if ! wait "$PID"; then
-        echo "Worker PID $PID exited with error"
-        FAIL=1
-    fi
-done
-
-if [[ "$FAIL" -eq 1 ]]; then
-    echo "Some workers failed — check logs for details."
-    exit 1
-fi
+# Detach all launched jobs from this shell so closing the terminal won't
+# send SIGHUP to the workers.
+disown -a
 
 echo "============================================================"
-echo "All workers finished. Results: logs/optuna_results.json"
+echo "All $NUM_GPUS worker(s) launched in the background."
+echo ""
+echo "  PID file : logs/optuna_workers.pid"
+echo "  Logs     : logs/optuna_worker_gpu<N>.log"
+echo ""
+echo "  Monitor  : tail -f logs/optuna_worker_gpu0.log"
+echo "  Status   : ps -p \$(paste -sd, logs/optuna_workers.pid)"
+echo "  Stop all : bash stop_optuna.sh"
 echo "============================================================"
