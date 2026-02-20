@@ -11,7 +11,6 @@ vast_startup.log
 # Training artifacts
 cache/
 models/
-logs/
 wandb/
 checkpoints/
 
