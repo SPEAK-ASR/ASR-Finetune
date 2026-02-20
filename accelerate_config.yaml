@@ -1,0 +1,23 @@
+compute_environment: LOCAL_MACHINE
+distributed_type: MULTI_GPU
+
+# 4x A40 — single node, all GPUs
+num_machines: 1
+num_processes: 4
+gpu_ids: all
+machine_rank: 0
+
+# bf16 mixed precision (A40 is Ampere — native bfloat16 support)
+mixed_precision: bf16
+downcast_bf16: "no"
+
+# DDP backend (NCCL is fastest for NVLink / PCIe connected A40s)
+rdzv_backend: static
+same_network: true
+
+main_training_function: main
+
+use_cpu: false
+tpu_use_cluster: false
+tpu_use_sudo: false
+tpu_env: []

@@ -4,7 +4,7 @@ from typing import Any
 import transformers
 import accelerate
 
-HF_MODEL_ID = "SPEAK-ASR/whisper-si-fullds-tm4"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-8"
 
 @dataclass
 class TrainingConfig:
@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 3000
+    save_steps: float = 1500
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -253,7 +253,7 @@ class TrainingConfig:
     Faster and saves memory but can harm metric values.
     """
     
-    # tf32: bool | None = None
+    tf32: bool = True
     """
     Whether to enable TF32 mode (available in Ampere and newer GPU architectures).
     Default depends on PyTorch's torch.backends.cuda.matmul.allow_tf32.
@@ -278,15 +278,17 @@ class TrainingConfig:
     # dataloader_drop_last: bool = False
     """Whether to drop the last incomplete batch if dataset length isn't divisible by batch size."""
     
-    eval_steps: float | None = 3000
+    eval_steps: float | None = 1500
     """
     Number of update steps between two evaluations if eval_strategy="steps".
     Defaults to same value as logging_steps if not set.
     If < 1, interpreted as ratio of total training steps.
     """
     
-    dataloader_num_workers: int = 12
-    """Number of subprocesses for data loading (PyTorch only). 0 means data loaded in main process."""
+    dataloader_num_workers: int = 4
+    """Number of subprocesses for data loading (PyTorch only). 0 means data loaded in main process.
+    Set to 4 per device; with 4x A40 GPUs this gives 16 total loader threads — avoids CPU contention.
+    """
     
     dataloader_prefetch_factor: int | None = 2
     """
@@ -433,7 +435,7 @@ class TrainingConfig:
     If None, logs to local directory. Space is public unless hub_private_repo=True.
     """
     
-    # ddp_find_unused_parameters: bool | None = None
+    ddp_find_unused_parameters: bool = False
     """
     In distributed training, value of find_unused_parameters flag passed to DistributedDataParallel.
     Defaults to False if gradient checkpointing used, True otherwise.
