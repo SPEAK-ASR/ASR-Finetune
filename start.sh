@@ -106,7 +106,7 @@ cmd_start() {
 
     step "Configuring multi-GPU environment..."
     export PYTHONUNBUFFERED=1
-    export NCCL_ASYNC_ERROR_HANDLING=1   # Surface NCCL errors quickly
+    export TORCH_NCCL_ASYNC_ERROR_HANDLING=1   # Surface NCCL errors quickly
     export NCCL_TIMEOUT=1800             # 30-min timeout for checkpoint saves
     export TORCH_NCCL_BLOCKING_WAIT=0   # Non-blocking collectives
 
