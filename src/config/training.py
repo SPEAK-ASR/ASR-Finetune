@@ -552,7 +552,7 @@ class TrainingConfig:
     """
     
     # PyTorch Compilation Settings
-    torch_compile: bool = True
+    # torch_compile: bool = False
     """
     Whether to compile model using PyTorch 2.0 torch.compile.
     Uses best defaults for torch.compile API. Customize with torch_compile_backend
