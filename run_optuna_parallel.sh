@@ -3,9 +3,11 @@
 # run_optuna_parallel.sh — Launch parallel Optuna workers (one per GPU)
 #
 # Usage:
-#   bash run_optuna_parallel.sh          # auto-detect GPUs, 50 total trials
-#   bash run_optuna_parallel.sh 100      # auto-detect GPUs, 100 total trials
-#   bash run_optuna_parallel.sh 100 4    # force 4 workers, 100 total trials
+#   bash run_optuna_parallel.sh                    # fresh study, 50 total trials
+#   bash run_optuna_parallel.sh 100               # fresh study, 100 total trials
+#   bash run_optuna_parallel.sh 100 4             # force 4 workers, 100 total trials
+#   bash run_optuna_parallel.sh 15 --resume       # resume existing study, 15 more trials
+#   bash run_optuna_parallel.sh 15 4 --resume     # resume with 4 workers, 15 more trials
 #
 # Each worker runs main.py with task=optuna_optimize, pinned to a single GPU
 # via CUDA_VISIBLE_DEVICES.  All workers share the same Optuna study through
@@ -17,8 +19,19 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-TOTAL_TRIALS="${1:-50}"
-NUM_GPUS="${2:-$(nvidia-smi -L 2>/dev/null | wc -l)}"
+# Parse arguments — --resume can appear anywhere in the argument list
+RESUME=false
+ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--resume" ]]; then
+        RESUME=true
+    else
+        ARGS+=("$arg")
+    fi
+done
+
+TOTAL_TRIALS="${ARGS[0]:-50}"
+NUM_GPUS="${ARGS[1]:-$(nvidia-smi -L 2>/dev/null | wc -l)}"
 
 if [[ "$NUM_GPUS" -eq 0 ]]; then
     echo "ERROR: No GPUs detected. Pass the count manually: $0 <trials> <gpus>"
@@ -36,14 +49,22 @@ echo "============================================================"
 echo "Optuna parallel launcher"
 echo "  Total trials : $TOTAL_TRIALS"
 echo "  GPUs         : $NUM_GPUS"
-echo "  Trials/worker: $TRIALS_PER_WORKER"
-echo "============================================================"
+echo "  Trials/worker: $TRIALS_PER_WORKER"  echo "  Resume mode  : $RESUME"echo "============================================================"
 
 # Ensure logs directory exists
 mkdir -p logs
 
-# Remove stale journal and PID file so we start a fresh study
-rm -f logs/optuna_journal.log logs/optuna_workers.pid
+# Remove stale PID file; conditionally remove journal for a fresh study
+if [[ "$RESUME" == true ]]; then
+    echo "INFO: Resume mode — preserving existing journal (logs/optuna_journal.log)"
+    if [[ ! -f logs/optuna_journal.log ]]; then
+        echo "WARNING: No journal file found to resume from. Starting fresh."
+    fi
+    rm -f logs/optuna_workers.pid
+else
+    echo "INFO: Fresh study — removing old journal and PID file"
+    rm -f logs/optuna_journal.log logs/optuna_workers.pid
+fi
 
 for GPU_ID in $(seq 0 $((NUM_GPUS - 1))); do
     echo "Launching worker on GPU $GPU_ID ..."
