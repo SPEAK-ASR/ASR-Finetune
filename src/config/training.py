@@ -602,7 +602,7 @@ class TrainingConfig:
     takes boolean compute_result argument to trigger final global summary statistics.
     """
     
-    # eval_on_start: bool = False
+    eval_on_start: bool = True
     """Whether to perform evaluation step (sanity check) before training to ensure validation works."""
     
     # use_liger_kernel: bool = False
