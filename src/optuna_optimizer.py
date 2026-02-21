@@ -70,15 +70,44 @@ SEARCH_SPACE: list[dict[str, Any]] = [
         "high": 0.3,
         "log": False,
     },
-    # Uncomment to include learning_rate in the search:
-    # {
-    #     "name": "learning_rate",
-    #     "target": "training",
-    #     "type": "float",
-    #     "low": 1e-6,
-    #     "high": 1e-3,
-    #     "log": True,
-    # },
+    {
+        "name": "learning_rate",
+        "target": "training",
+        "type": "float",
+        "low": 1e-6,
+        "high": 1e-3,
+        "log": True,
+    },
+    # per_device_train_batch_size as categorical powers-of-2.
+    # Note: auto_find_batch_size=True may halve this on OOM, so results
+    # are approximate — disable auto_find_batch_size for tighter control.
+    {
+        "name": "per_device_train_batch_size",
+        "target": "training",
+        "type": "categorical",
+        "choices": [8, 16, 32, 64],
+    },
+    {
+        "name": "warmup_steps",
+        "target": "training",
+        "type": "int",
+        "low": 50,
+        "high": 500,
+        "log": False,
+    },
+    {
+        "name": "optim",
+        "target": "training",
+        "type": "categorical",
+        "choices": ["adamw_torch_fused", "adamw_torch", "adafactor"],
+    },
+    # neftune_noise_alpha: None disables the feature; 5–15 is the recommended range.
+    {
+        "name": "neftune_noise_alpha",
+        "target": "training",
+        "type": "categorical",
+        "choices": [None, 5.0, 10.0, 15.0],
+    },
 ]
 
 
@@ -148,11 +177,19 @@ class OptunaOptimizer:
             int(per_worker) if per_worker else CONFIG.runtime.optuna_n_trials
         )
 
-        # GPU info for logging
-        self._gpu_id = os.environ.get("CUDA_VISIBLE_DEVICES", "all")
+        # GPU info for logging — check all three device-visibility vars
+        # (CUDA_VISIBLE_DEVICES, HIP_VISIBLE_DEVICES, ROCR_VISIBLE_DEVICES)
+        # so the display is correct for both CUDA and ROCm deployments.
+        self._gpu_id = (
+            os.environ.get("CUDA_VISIBLE_DEVICES")
+            or os.environ.get("HIP_VISIBLE_DEVICES")
+            or os.environ.get("ROCR_VISIBLE_DEVICES")
+            or "all"
+        )
+        self._worker_idx = os.environ.get("OPTUNA_WORKER_IDX", "0")
         if torch.cuda.is_available():
             logger.info(
-                f"GPU worker — CUDA_VISIBLE_DEVICES={self._gpu_id}, "
+                f"GPU worker #{self._worker_idx} — GPU={self._gpu_id}, "
                 f"device={torch.cuda.get_device_name(0)}"
             )
 
@@ -238,9 +275,10 @@ class OptunaOptimizer:
         """Create an Optuna study, optimize, save results, and return it."""
 
         logger.info(f"{'=' * 60}")
-        logger.info("Starting Optuna hyperparameter optimization")
+        logger.info(f"Starting Optuna hyperparameter optimization")
         logger.info(f"Trials (this worker): {self.n_trials} | "
-                    f"Epochs/trial: {self.trial_epochs} | GPU: {self._gpu_id}")
+                    f"Epochs/trial: {self.trial_epochs} | "
+                    f"Worker: #{self._worker_idx} | GPU: {self._gpu_id}")
         logger.info(f"Search space: {[e['name'] for e in SEARCH_SPACE]}")
         logger.info(f"{'=' * 60}")
 
@@ -256,7 +294,7 @@ class OptunaOptimizer:
             storage=storage,
             load_if_exists=True,  # workers join the same study
             pruner=optuna.pruners.MedianPruner(
-                n_startup_trials=5,
+                n_startup_trials=10,
                 n_warmup_steps=0,
             ),
         )

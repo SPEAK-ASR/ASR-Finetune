@@ -27,7 +27,7 @@ class RuntimeConfig:
     early_stopping_patience: int = 3
     
     # Optuna hyperparameter optimization settings
-    optuna_n_trials: int = 50
+    optuna_n_trials: int = 100
     optuna_trial_epochs: float = 1.0
 
 
