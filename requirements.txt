@@ -12,3 +12,4 @@ wandb
 optuna
 optuna-integration[transformers]
 optuna-dashboard
+plotly
