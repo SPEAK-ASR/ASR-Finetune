@@ -96,7 +96,7 @@ class TrainingConfig:
     """Maximum gradient norm for gradient clipping."""
     
     # Training Duration Settings
-    num_train_epochs: float = 5.0
+    num_train_epochs: float = 15.0
     """
     Total number of training epochs to perform.
     If not an integer, will perform the decimal part of the last epoch before stopping.
