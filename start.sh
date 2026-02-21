@@ -17,7 +17,6 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-VENV_DIR="$SCRIPT_DIR/.venv"
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_FILE="$LOG_DIR/training.log"
 PID_FILE="$SCRIPT_DIR/.training.pid"
@@ -73,14 +72,6 @@ _require_env() {
     [ "$missing" -eq 0 ] || exit 1
 }
 
-_require_venv() {
-    if [ ! -f "$VENV_DIR/bin/activate" ]; then
-        error "Virtual environment not found at $VENV_DIR"
-        error "Run ./setup.sh first to create it."
-        exit 1
-    fi
-}
-
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
@@ -95,14 +86,11 @@ cmd_start() {
 
     step "Validating prerequisites..."
     _require_env
-    _require_venv
 
     mkdir -p "$LOG_DIR"
 
-    step "Activating virtual environment..."
-    # shellcheck disable=SC1090
-    source "$VENV_DIR/bin/activate"
-    success "venv: $(which python) — $(python --version 2>&1)"
+    step "Configuring environment..."
+    success "Python: $(which python) — $(python --version 2>&1)"
 
     step "Configuring multi-GPU environment..."
     export PYTHONUNBUFFERED=1
