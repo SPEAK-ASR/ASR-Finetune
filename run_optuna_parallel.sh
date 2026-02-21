@@ -116,8 +116,20 @@ if [[ "$RESUME" == true ]]; then
     fi
     rm -f logs/optuna_workers.pid
 else
-    echo "INFO: Fresh study — removing old journal and PID file"
-    rm -f logs/optuna_journal.log logs/optuna_workers.pid
+    if [[ -f logs/optuna_journal.log ]]; then
+        echo "WARNING: logs/optuna_journal.log already exists."
+        read -r -p "Delete it? This will lose your current progress. [y/N] " CONFIRM
+        if [[ "${CONFIRM,,}" == "y" ]]; then
+            echo "INFO: Deleting old journal and PID file."
+            rm -f logs/optuna_journal.log logs/optuna_workers.pid
+        else
+            echo "INFO: Keeping existing journal. Use --resume to continue from it, or remove it manually."
+            exit 0
+        fi
+    else
+        echo "INFO: Fresh study — removing old PID file"
+        rm -f logs/optuna_workers.pid
+    fi
 fi
 
 # ---------------------------------------------------------------------------
