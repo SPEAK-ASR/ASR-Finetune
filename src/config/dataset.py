@@ -18,7 +18,8 @@ class DatasetConfig:
     # All datasets will be combined into a single DatasetDict
     datasets: List[SingleDatasetConfig] = field(default_factory=lambda: [
         SingleDatasetConfig(
-            dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed",
+            # dataset_name="SPEAK-ASR/openslr-sinhala-asr-preprocessed",
+            dataset_name="SPEAK-ASR/openslr-sinhala-asr-norm-noise-rem-preprocessed",
             train_split="train",
             test_split="test"
         ),
