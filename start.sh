@@ -127,12 +127,57 @@ cmd_start() {
 cmd_stop() {
     if pid=$(_check_pid); then
         step "Stopping training (PID $pid)..."
-        # Kill the entire process group so all torchrun worker processes die too
-        kill -- "-$pid" 2>/dev/null || kill "$pid"
+        
+        # Find all child processes (accelerate, python, etc.)
+        info "Finding all related processes..."
+        local pids_to_kill=$(pgrep -P "$pid" 2>/dev/null || echo "")
+        
+        # Add the main PID to the list
+        pids_to_kill="$pid $pids_to_kill"
+        
+        # Also find any python processes running main.py
+        local python_pids=$(pgrep -f "main.py" 2>/dev/null || echo "")
+        if [ -n "$python_pids" ]; then
+            pids_to_kill="$pids_to_kill $python_pids"
+        fi
+        
+        # Remove duplicates and kill each process
+        local unique_pids=$(echo "$pids_to_kill" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+        
+        info "Sending SIGTERM to processes: $unique_pids"
+        for p in $unique_pids; do
+            kill "$p" 2>/dev/null || true
+        done
+        
+        # Wait a bit for graceful shutdown
+        sleep 2
+        
+        # Force kill any remaining processes
+        for p in $unique_pids; do
+            if kill -0 "$p" 2>/dev/null; then
+                warn "Force killing stubborn process: $p"
+                kill -9 "$p" 2>/dev/null || true
+            fi
+        done
+        
         rm -f "$PID_FILE"
         success "Training stopped."
     else
         warn "No running training process found."
+        
+        # Check for orphaned python processes
+        local orphaned=$(pgrep -f "main.py" 2>/dev/null || echo "")
+        if [ -n "$orphaned" ]; then
+            warn "Found orphaned Python processes: $orphaned"
+            read -p "Kill them? (y/n): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                for p in $orphaned; do
+                    kill -9 "$p" 2>/dev/null || true
+                done
+                success "Orphaned processes killed."
+            fi
+        fi
     fi
 }
 
