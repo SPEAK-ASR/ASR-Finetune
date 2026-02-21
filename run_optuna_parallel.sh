@@ -1,64 +1,122 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# run_optuna_parallel.sh — Launch parallel Optuna workers (one per GPU)
+# run_optuna_parallel.sh — Launch parallel Optuna workers
+#
+# Works with a single GPU (multiple workers sharing the same device) or
+# multiple GPUs (workers distributed round-robin across devices).
 #
 # Usage:
-#   bash run_optuna_parallel.sh                    # fresh study, 50 total trials
-#   bash run_optuna_parallel.sh 100               # fresh study, 100 total trials
-#   bash run_optuna_parallel.sh 100 4             # force 4 workers, 100 total trials
-#   bash run_optuna_parallel.sh 15 --resume       # resume existing study, 15 more trials
-#   bash run_optuna_parallel.sh 15 4 --resume     # resume with 4 workers, 15 more trials
+#   bash run_optuna_parallel.sh                          # auto workers, 50 trials
+#   bash run_optuna_parallel.sh 100                      # 100 total trials, 1 worker/GPU
+#   bash run_optuna_parallel.sh 100 --workers 3          # 3 concurrent workers on GPU 0
+#   bash run_optuna_parallel.sh 100 --workers 4 --resume # resume study with 4 workers
+#   bash run_optuna_parallel.sh 15 --resume              # resume, 1 worker per GPU
 #
-# Each worker runs main.py with task=optuna_optimize, pinned to a single GPU
-# via CUDA_VISIBLE_DEVICES.  All workers share the same Optuna study through
-# a JournalFileStorage file (logs/optuna_journal.log).
+# Single GPU (e.g. MI300X with ~192 GB VRAM):
+#   All workers receive CUDA_VISIBLE_DEVICES=0 / HIP_VISIBLE_DEVICES=0.
+#   Optuna assigns trials automatically — no duplicate work.
+#   Rule of thumb: workers = floor(VRAM_GB / peak_VRAM_per_trial_GB)
+#   e.g.  192 GB / 40 GB ≈ 4 workers  →  bash run_optuna_parallel.sh 50 --workers 4
 #
-# Workers run fully detached (survives terminal close).
-# To stop all workers:  bash stop_optuna.sh
-# To monitor progress:  tail -f logs/optuna_worker_gpu0.log
+# Multi-GPU:
+#   Workers are assigned round-robin: worker i → GPU (i % GPU_COUNT).
+#   Default workers = GPU_COUNT (one per GPU).
+#
+# All workers share the same Optuna study via JournalFileStorage
+# (logs/optuna_journal.log), coordinating trials automatically.
+#
+# Workers run fully detached (survive terminal close).
+# Stop all workers : bash stop_optuna.sh
+# Monitor progress : tail -f logs/optuna_worker0_gpu0.log
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-# Parse arguments — --resume can appear anywhere in the argument list
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+TOTAL_TRIALS=50
+WORKERS=""        # --workers N  (overrides GPU auto-detection)
 RESUME=false
-ARGS=()
-for arg in "$@"; do
-    if [[ "$arg" == "--resume" ]]; then
-        RESUME=true
-    else
-        ARGS+=("$arg")
-    fi
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --resume)
+            RESUME=true
+            shift
+            ;;
+        --workers)
+            WORKERS="$2"
+            shift 2
+            ;;
+        --*)
+            echo "ERROR: Unknown option '$1'"
+            exit 1
+            ;;
+        *)
+            TOTAL_TRIALS="$1"
+            shift
+            ;;
+    esac
 done
 
-TOTAL_TRIALS="${ARGS[0]:-50}"
-NUM_GPUS="${ARGS[1]:-$(nvidia-smi -L 2>/dev/null | wc -l)}"
+# ---------------------------------------------------------------------------
+# GPU detection — ROCm first, then CUDA, then assume 1
+# ---------------------------------------------------------------------------
+detect_gpu_count() {
+    if command -v rocm-smi &>/dev/null; then
+        # Count GPU[ lines in rocm-smi output
+        local count
+        count=$(rocm-smi --showid 2>/dev/null | grep -c 'GPU\[' || true)
+        echo $(( count < 1 ? 1 : count ))
+    elif command -v amd-smi &>/dev/null; then
+        local count
+        count=$(amd-smi list 2>/dev/null | grep -c 'GPU ' || true)
+        echo $(( count < 1 ? 1 : count ))
+    elif command -v nvidia-smi &>/dev/null; then
+        nvidia-smi -L 2>/dev/null | wc -l
+    else
+        echo 1
+    fi
+}
 
-if [[ "$NUM_GPUS" -eq 0 ]]; then
-    echo "ERROR: No GPUs detected. Pass the count manually: $0 <trials> <gpus>"
+GPU_COUNT=$(detect_gpu_count)
+GPU_COUNT=$(( GPU_COUNT < 1 ? 1 : GPU_COUNT ))   # guard against 0
+
+# Default: one worker per GPU; user may override with --workers
+TOTAL_WORKERS="${WORKERS:-$GPU_COUNT}"
+
+if [[ "$TOTAL_WORKERS" -lt 1 ]]; then
+    echo "ERROR: --workers must be >= 1"
     exit 1
 fi
 
-if [[ "$NUM_GPUS" -eq 1 ]]; then
-    echo "INFO: Only 1 GPU detected. Running all $TOTAL_TRIALS trials sequentially."
-    echo "      (You can also run directly: python main.py)"
-fi
+TRIALS_PER_WORKER=$(( (TOTAL_TRIALS + TOTAL_WORKERS - 1) / TOTAL_WORKERS ))  # ceil
 
-TRIALS_PER_WORKER=$(( (TOTAL_TRIALS + NUM_GPUS - 1) / NUM_GPUS ))  # ceil division
-
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
 echo "============================================================"
-echo "Optuna parallel launcher"
-echo "  Total trials : $TOTAL_TRIALS"
-echo "  GPUs         : $NUM_GPUS"
-echo "  Trials/worker: $TRIALS_PER_WORKER"  echo "  Resume mode  : $RESUME"echo "============================================================"
+echo " Optuna parallel launcher"
+echo "   Total trials   : $TOTAL_TRIALS"
+echo "   GPU(s) detected: $GPU_COUNT"
+echo "   Total workers  : $TOTAL_WORKERS"
+echo "   Trials/worker  : $TRIALS_PER_WORKER"
+echo "   Resume mode    : $RESUME"
+if [[ "$TOTAL_WORKERS" -gt "$GPU_COUNT" ]]; then
+    WPG=$(( (TOTAL_WORKERS + GPU_COUNT - 1) / GPU_COUNT ))
+    echo "   Workers/GPU    : ~$WPG  (sharing VRAM — ensure sufficient VRAM)"
+fi
+echo "============================================================"
 
-# Ensure logs directory exists
+# ---------------------------------------------------------------------------
+# Prepare log directory and journal
+# ---------------------------------------------------------------------------
 mkdir -p logs
 
-# Remove stale PID file; conditionally remove journal for a fresh study
 if [[ "$RESUME" == true ]]; then
     echo "INFO: Resume mode — preserving existing journal (logs/optuna_journal.log)"
     if [[ ! -f logs/optuna_journal.log ]]; then
-        echo "WARNING: No journal file found to resume from. Starting fresh."
+        echo "WARNING: No journal file found — starting fresh."
     fi
     rm -f logs/optuna_workers.pid
 else
@@ -66,17 +124,27 @@ else
     rm -f logs/optuna_journal.log logs/optuna_workers.pid
 fi
 
-for GPU_ID in $(seq 0 $((NUM_GPUS - 1))); do
-    echo "Launching worker on GPU $GPU_ID ..."
+# ---------------------------------------------------------------------------
+# Launch workers
+# ---------------------------------------------------------------------------
+for WORKER_IDX in $(seq 0 $(( TOTAL_WORKERS - 1 ))); do
+    # Round-robin GPU assignment: worker i → GPU (i % GPU_COUNT)
+    GPU_ID=$(( WORKER_IDX % GPU_COUNT ))
+    LOG_FILE="logs/optuna_worker${WORKER_IDX}_gpu${GPU_ID}.log"
+
+    echo "Launching worker $WORKER_IDX → GPU $GPU_ID  (log: $LOG_FILE)"
 
     # setsid creates a new process group so the worker is fully independent.
     # nohup keeps it alive after the terminal closes.
-    # The PGID equals the PID of the setsid child, so we can kill -PGID later.
+    # Set all three device-visibility vars for ROCm + CUDA compat.
     setsid nohup bash -c "
         export CUDA_VISIBLE_DEVICES=${GPU_ID}
+        export HIP_VISIBLE_DEVICES=${GPU_ID}
+        export ROCR_VISIBLE_DEVICES=${GPU_ID}
         export OPTUNA_TRIALS_PER_WORKER=${TRIALS_PER_WORKER}
+        export OPTUNA_WORKER_IDX=${WORKER_IDX}
         exec python main.py
-    " >> "logs/optuna_worker_gpu${GPU_ID}.log" 2>&1 &
+    " >> "${LOG_FILE}" 2>&1 &
 
     echo $! >> logs/optuna_workers.pid
 done
@@ -86,12 +154,12 @@ done
 disown -a
 
 echo "============================================================"
-echo "All $NUM_GPUS worker(s) launched in the background."
+echo "All $TOTAL_WORKERS worker(s) launched in the background."
 echo ""
 echo "  PID file : logs/optuna_workers.pid"
-echo "  Logs     : logs/optuna_worker_gpu<N>.log"
+echo "  Logs     : logs/optuna_worker<N>_gpu<ID>.log"
 echo ""
-echo "  Monitor  : tail -f logs/optuna_worker_gpu0.log"
+echo "  Monitor  : tail -f logs/optuna_worker0_gpu0.log"
 echo "  Status   : ps -p \$(paste -sd, logs/optuna_workers.pid)"
 echo "  Stop all : bash stop_optuna.sh"
 echo "============================================================"
