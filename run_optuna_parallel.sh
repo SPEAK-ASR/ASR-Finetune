@@ -66,11 +66,7 @@ detect_gpu_count() {
     if command -v rocm-smi &>/dev/null; then
         # Count GPU[ lines in rocm-smi output
         local count
-        count=$(rocm-smi --showid 2>/dev/null | grep -c 'GPU\[' || true)
-        echo $(( count < 1 ? 1 : count ))
-    elif command -v amd-smi &>/dev/null; then
-        local count
-        count=$(amd-smi list 2>/dev/null | grep -c 'GPU ' || true)
+        count=$(rocm-smi --showuniqueid 2>/dev/null | grep -c 'GPU\[' || true)
         echo $(( count < 1 ? 1 : count ))
     elif command -v nvidia-smi &>/dev/null; then
         nvidia-smi -L 2>/dev/null | wc -l
