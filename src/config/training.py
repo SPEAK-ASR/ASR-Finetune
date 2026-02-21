@@ -253,7 +253,7 @@ class TrainingConfig:
     Faster and saves memory but can harm metric values.
     """
     
-    tf32: bool = True
+    # tf32: bool = True
     """
     Whether to enable TF32 mode (available in Ampere and newer GPU architectures).
     Default depends on PyTorch's torch.backends.cuda.matmul.allow_tf32.
