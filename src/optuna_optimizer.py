@@ -46,14 +46,7 @@ OPTUNA_JOURNAL_PATH = os.path.join(CONFIG.paths.log_dir, "optuna_journal.log")
 # To remove a parameter, delete or comment out its entry.
 # ---------------------------------------------------------------------------
 SEARCH_SPACE: list[dict[str, Any]] = [
-    {
-        "name": "r",
-        "target": "lora",
-        "type": "int",
-        "low": 4,
-        "high": 128,
-        "log": True,
-    },
+    # --- LoRA architecture ---
     {
         "name": "lora_alpha",
         "target": "lora",
@@ -70,6 +63,7 @@ SEARCH_SPACE: list[dict[str, Any]] = [
         "high": 0.3,
         "log": False,
     },
+    # --- Core training ---
     {
         "name": "learning_rate",
         "target": "training",
@@ -78,36 +72,48 @@ SEARCH_SPACE: list[dict[str, Any]] = [
         "high": 1e-3,
         "log": True,
     },
-    # per_device_train_batch_size as categorical powers-of-2.
-    # Note: auto_find_batch_size=True may halve this on OOM, so results
-    # are approximate — disable auto_find_batch_size for tighter control.
+    # lr_scheduler_type: shape of the LR schedule matters as much as the peak LR.
     {
-        "name": "per_device_train_batch_size",
+        "name": "lr_scheduler_type",
         "target": "training",
         "type": "categorical",
-        "choices": [8, 16, 32, 64],
+        "choices": ["linear", "cosine", "constant_with_warmup"],
     },
+    # weight_decay: L2 regularisation; orthogonal to dropout, high impact on generalisation.
     {
-        "name": "warmup_steps",
+        "name": "weight_decay",
         "target": "training",
-        "type": "int",
-        "low": 50,
-        "high": 500,
+        "type": "float",
+        "low": 0.0,
+        "high": 0.1,
         "log": False,
     },
+    # gradient_accumulation_steps: effective batch size lever now that batch size is fixed.
+    # effective_batch = per_device_batch(16) * grad_accum_steps
     {
-        "name": "optim",
+        "name": "gradient_accumulation_steps",
         "target": "training",
         "type": "categorical",
-        "choices": ["adamw_torch_fused", "adamw_torch", "adafactor"],
+        "choices": [1, 2, 4, 8],
     },
-    # neftune_noise_alpha: None disables the feature; 5–15 is the recommended range.
-    {
-        "name": "neftune_noise_alpha",
-        "target": "training",
-        "type": "categorical",
-        "choices": [None, 5.0, 10.0, 15.0],
-    },
+]
+
+# ---------------------------------------------------------------------------
+# Fixed hyperparameters — pinned to best values from exp2 (trial #46, WER 16.99)
+# These were dropped from the search space due to low importance scores:
+#   r                          importance < 0.03
+#   warmup_steps               importance   0.02
+#   optim                      importance   0.04
+#   per_device_train_batch_size importance < 0.01
+#   neftune_noise_alpha        importance   0.04
+# Each entry: {"name", "target", "value"}
+# ---------------------------------------------------------------------------
+FIXED_PARAMS: list[dict[str, Any]] = [
+    {"name": "r",                          "target": "lora",     "value": 101},
+    {"name": "per_device_train_batch_size", "target": "training", "value": 16},
+    {"name": "warmup_steps",               "target": "training", "value": 295},
+    {"name": "optim",                      "target": "training", "value": "adamw_torch"},
+    {"name": "neftune_noise_alpha",        "target": "training", "value": None},
 ]
 
 
@@ -194,8 +200,9 @@ class OptunaOptimizer:
             )
 
         # Snapshot the original values so we can restore them after the study.
+        # Covers both tuned (SEARCH_SPACE) and fixed (FIXED_PARAMS) params.
         self._original_values: dict[str, dict[str, Any]] = {}
-        for entry in SEARCH_SPACE:
+        for entry in SEARCH_SPACE + FIXED_PARAMS:
             target = entry["target"]
             name = entry["name"]
             self._original_values.setdefault(target, {})[name] = deepcopy(
@@ -218,6 +225,12 @@ class OptunaOptimizer:
 
         # 1) Suggest & apply search‑space params
         suggested = _suggest_params(trial, SEARCH_SPACE)
+
+        # Apply fixed params (pinned to best values from exp2)
+        for entry in FIXED_PARAMS:
+            setattr(getattr(CONFIG, entry["target"]), entry["name"], entry["value"])
+            suggested[entry["name"]] = entry["value"]
+
         logger.info(f"Trial {trial.number} — params: {suggested}")
 
         # 2) Override training config for a short, silent trial

@@ -80,7 +80,7 @@ class TrainingConfig:
     learning_rate: float = 3e-5
     """The initial learning rate for the AdamW optimizer."""
     
-    # weight_decay: float = 0.0
+    weight_decay: float = 0.0
     """Weight decay to apply to all layers except bias and LayerNorm weights in AdamW optimizer."""
     
     # adam_beta1: float = 0.9
@@ -109,7 +109,7 @@ class TrainingConfig:
     """
     
     # Learning Rate Scheduler Settings
-    # lr_scheduler_type: transformers.trainer_utils.SchedulerType | str = 'linear'
+    lr_scheduler_type: transformers.trainer_utils.SchedulerType | str = 'linear'
     """The learning rate scheduler type to use. See SchedulerType for all possible values."""
     
     # lr_scheduler_kwargs: dict | str | None = None
