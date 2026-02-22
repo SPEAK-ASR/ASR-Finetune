@@ -1,0 +1,30 @@
+[
+    {
+        "trial_discription": "results for exp2, considered following params",
+        "best_trial_number": 67,
+        "best_wer": 16.972105502961575,
+        "best_params": {
+            "lora_alpha": 144,
+            "lora_dropout": 0.0884583610934014,
+            "learning_rate": 0.0006926233815806411,
+            "lr_scheduler_type": "linear",
+            "weight_decay": 0.021426034972660626,
+            "gradient_accumulation_steps": 1
+        }
+    },
+    {
+        "trial_discription": "results for exp3, considered following params, resumed from exp2 (58 trials done → target 108 total), removed and fixed with best value parameres that showed low importance in exp2",
+        "best_trial_number": 46,
+        "best_wer": 16.994886852629982,
+        "best_params": {
+            "r": 101,
+            "lora_alpha": 158,
+            "lora_dropout": 0.12021948741507338,
+            "learning_rate": 0.0006842988691079492,
+            "per_device_train_batch_size": 16,
+            "warmup_steps": 295,
+            "optim": "adamw_torch",
+            "neftune_noise_alpha": null
+        }
+    }
+]
