@@ -13,6 +13,6 @@ cache/
 models/
 wandb/
 checkpoints/
-logs/
+logs/optuna-exp*/
 
 .claude/
