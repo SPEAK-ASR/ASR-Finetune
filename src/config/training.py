@@ -33,7 +33,7 @@ class TrainingConfig:
     """
     
     # Evaluation Settings
-    eval_strategy: transformers.trainer_utils.IntervalStrategy | str = 'steps'
+    eval_strategy: transformers.trainer_utils.IntervalStrategy | str = 'epoch'
     """
     The evaluation strategy to adopt during training. Possible values:
     - "no": No evaluation during training
@@ -96,7 +96,7 @@ class TrainingConfig:
     """Maximum gradient norm for gradient clipping."""
     
     # Training Duration Settings
-    num_train_epochs: float = 15.0
+    num_train_epochs: float = 20.0
     """
     Total number of training epochs to perform.
     If not an integer, will perform the decimal part of the last epoch before stopping.
@@ -165,7 +165,7 @@ class TrainingConfig:
     """
     
     # Checkpoint Saving Settings
-    # save_strategy: transformers.trainer_utils.SaveStrategy | str = 'steps'
+    save_strategy: transformers.trainer_utils.SaveStrategy | str = 'epoch'
     """
     The checkpoint save strategy to adopt during training. Possible values:
     - "no": No save during training
@@ -175,7 +175,7 @@ class TrainingConfig:
     Saving is also performed at the very end of training.
     """
     
-    save_steps: float = 1500
+    # save_steps: float = 1500
     """
     Number of update steps between two checkpoint saves if save_strategy="steps".
     If < 1, interpreted as ratio of total training steps.
@@ -278,7 +278,7 @@ class TrainingConfig:
     # dataloader_drop_last: bool = False
     """Whether to drop the last incomplete batch if dataset length isn't divisible by batch size."""
     
-    eval_steps: float | None = 1500
+    # eval_steps: float | None = 1500
     """
     Number of update steps between two evaluations if eval_strategy="steps".
     Defaults to same value as logging_steps if not set.
