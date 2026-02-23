@@ -4,7 +4,7 @@ from typing import Any
 import transformers
 import accelerate
 
-HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-9"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-10"
 
 @dataclass
 class TrainingConfig:
@@ -45,7 +45,7 @@ class TrainingConfig:
     """When performing evaluation and predictions, only returns the loss."""
     
     # Batch Size Settings
-    per_device_train_batch_size: int = 32
+    per_device_train_batch_size: int = 16
     """
     The batch size per device (GPU/TPU/CPU) for training.
     Global batch size = per_device_train_batch_size * number_of_devices * gradient_accumulation_steps
@@ -77,10 +77,10 @@ class TrainingConfig:
     """
     
     # Optimization Settings
-    learning_rate: float = 3e-5
+    learning_rate: float = 0.0006926233815806411
     """The initial learning rate for the AdamW optimizer."""
     
-    # weight_decay: float = 0.0
+    weight_decay: float = 0.021426034972660626
     """Weight decay to apply to all layers except bias and LayerNorm weights in AdamW optimizer."""
     
     # adam_beta1: float = 0.9
@@ -109,7 +109,7 @@ class TrainingConfig:
     """
     
     # Learning Rate Scheduler Settings
-    # lr_scheduler_type: transformers.trainer_utils.SchedulerType | str = 'linear'
+    lr_scheduler_type: transformers.trainer_utils.SchedulerType | str = 'linear'
     """The learning rate scheduler type to use. See SchedulerType for all possible values."""
     
     # lr_scheduler_kwargs: dict | str | None = None
@@ -118,7 +118,7 @@ class TrainingConfig:
     # warmup_ratio: float | None = None
     """Ratio of total training steps used for linear warmup from 0 to learning_rate."""
     
-    warmup_steps: float = 200
+    warmup_steps: float = 295
     """
     Number of steps for linear warmup from 0 to learning_rate.
     If < 1, interpreted as ratio of total training steps.
@@ -580,7 +580,7 @@ class TrainingConfig:
     """
     
     # Training Techniques
-    neftune_noise_alpha: float | None = 5.0
+    neftune_noise_alpha: float | None = None
     """
     If not None, activates NEFTune noise embeddings. Can drastically improve
     instruction fine-tuning performance. Supports PreTrainedModel and PeftModel.
