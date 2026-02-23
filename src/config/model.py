@@ -5,7 +5,7 @@ class ModelConfig:
     """Configuration for model initialization."""
     
     # Model selection
-    base_model_name: str = "openai/whisper-small"
+    base_model_name: str = "openai/whisper-medium"
     language: str = "Sinhala"
     task: str = "transcribe"
     max_token_length: int = 1024
