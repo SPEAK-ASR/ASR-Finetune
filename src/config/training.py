@@ -45,7 +45,7 @@ class TrainingConfig:
     """When performing evaluation and predictions, only returns the loss."""
     
     # Batch Size Settings
-    per_device_train_batch_size: int = 16
+    per_device_train_batch_size: int = 128
     """
     The batch size per device (GPU/TPU/CPU) for training.
     Global batch size = per_device_train_batch_size * number_of_devices * gradient_accumulation_steps
@@ -285,7 +285,7 @@ class TrainingConfig:
     If < 1, interpreted as ratio of total training steps.
     """
     
-    dataloader_num_workers: int = 4
+    dataloader_num_workers: int = 8
     """Number of subprocesses for data loading (PyTorch only). 0 means data loaded in main process.
     Set to 4 per device; with 4x A40 GPUs this gives 16 total loader threads — avoids CPU contention.
     """
