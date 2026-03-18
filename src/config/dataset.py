@@ -23,11 +23,11 @@ class DatasetConfig:
             train_split="train",
             test_split="test"
         ),
-        # SingleDatasetConfig(
-        #     dataset_name="SPEAK-ASR/youtube-sinhala-asr-preprocessed",
-        #     train_split="train",
-        #     test_split="test"
-        # ),
+        SingleDatasetConfig(
+            dataset_name="SPEAK-ASR/youtube-sinhala-asr-preprocessed",
+            train_split="train",
+            test_split="test"
+        ),
     ])
 
     use_auth_token: bool = True

@@ -4,7 +4,7 @@ from typing import Any
 import transformers
 import accelerate
 
-HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-10-medium"
+HF_MODEL_ID = "SPEAK-ASR/whisper-si-exp-10-medium-all"
 
 @dataclass
 class TrainingConfig:
