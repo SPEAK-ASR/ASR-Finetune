@@ -38,6 +38,20 @@ class DatasetConfig:
     audio_column: str = "audio"
     transcript_column: str = "text"
 
+    # Joint-pipeline datasets
+    # Parallel noisy-Sinhala -> clean-Sinhala text pairs (Stage 1 pretraining).
+    # Expected columns: "noisy_text", "clean_text".
+    parallel_text_dataset: str | None = "SPEAK-ASR/sinhala-noisy-clean-parallel"
+    parallel_noisy_column: str = "noisy_text"
+    parallel_clean_column: str = "clean_text"
+
+    # Pseudo dataset produced by Stage 0 (ASR hypotheses over the ASR train set).
+    # Expected columns: audio, asr_hyp_text, clean_text (plus the original features).
+    pseudo_dataset_name: str = "SPEAK-ASR/openslr-sinhala-asr-pseudo-exp10"
+    pseudo_hyp_column: str = "asr_hyp_text"
+    pseudo_clean_column: str = "clean_text"
+
+
 _DATASET_CONFIG = DatasetConfig()
 
 def get_dataset_config() -> DatasetConfig:

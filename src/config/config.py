@@ -13,15 +13,28 @@ from src.config.huggingface import HuggingFaceConfig, get_huggingface_config
 from src.config.lora import LoRAConfig, get_lora_config
 from src.config.dataset import DatasetConfig, get_dataset_config
 from src.config.model import ModelConfig, get_model_config
+from src.config.postprocessor import PostProcessorConfig, get_postprocessor_config
+from src.config.pipeline import PipelineConfig, get_pipeline_config
 
 
 @dataclass
 class RuntimeConfig:
     """Configuration for runtime/execution settings."""
-    
-    # task can be either prepare_dataset or finetune_asr_model
-    task: Literal["prepare_dataset", "finetune_asr_model"] = "finetune_asr_model"
-    
+
+    # Runtime task dispatcher. Values:
+    #   - prepare_dataset: cache Mel features + tokenized labels for Whisper
+    #   - finetune_asr_model: standalone Whisper fine-tuning (existing flow)
+    #   - collect_pseudo_data: Stage 0 - run current Whisper over train, cache (hyp, gold)
+    #   - pretrain_postproc: Stage 1 - train ByT5 on parallel + pseudo pairs
+    #   - finetune_joint_pipeline: Stage 2 - joint Whisper+PostProc end-to-end training
+    task: Literal[
+        "prepare_dataset",
+        "finetune_asr_model",
+        "collect_pseudo_data",
+        "pretrain_postproc",
+        "finetune_joint_pipeline",
+    ] = "finetune_asr_model"
+
     # Checkpoint resumption
     resume_from_checkpoint: Optional[Union[str, bool]] = False
     early_stopping_patience: int = 3
@@ -94,6 +107,8 @@ class Config:
     lora: LoRAConfig = field(default_factory=get_lora_config)
     huggingface: HuggingFaceConfig = field(default_factory=get_huggingface_config)
     paths: PathConfig = field(default_factory=PathConfig)
+    postprocessor: PostProcessorConfig = field(default_factory=get_postprocessor_config)
+    pipeline: PipelineConfig = field(default_factory=get_pipeline_config)
     
 
 # Configuration instance for convenience

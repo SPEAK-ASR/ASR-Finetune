@@ -168,3 +168,100 @@ class DataPreprocessor:
             logger.warning("need to remove this sample from dataset")
         
         return batch
+
+    def prepare_joint_dataset(
+        self,
+        dataset: DatasetDict,
+        feature_extractor_component,
+        whisper_tokenizer_component,
+        byt5_tokenizer,
+        hyp_column: Optional[str] = None,
+        clean_column: Optional[str] = None,
+    ) -> DatasetDict:
+        """Prepare a dataset for the joint ASR+PostProc pipeline.
+
+        The input dataset (from Stage 0) must contain:
+          - ``audio`` column (16kHz waveform)
+          - hyp_column (default ``asr_hyp_text``): the ASR's hypothesised transcript
+          - clean_column (default ``clean_text``): the gold / cleaned transcript
+
+        Produces columns:
+          - ``input_features``: log-Mel features for Whisper
+          - ``asr_hyp_labels``: Whisper tokenizer ids for the hypothesis text
+            (teacher-forced into Whisper's decoder so hidden states encode Whisper's
+            actual error pattern)
+          - ``clean_labels``: ByT5 byte ids for the clean target text (main loss)
+        """
+        hyp_col = hyp_column or CONFIG.dataset.pseudo_hyp_column
+        clean_col = clean_column or CONFIG.dataset.pseudo_clean_column
+
+        feature_extractor = feature_extractor_component.get()
+        whisper_tokenizer = whisper_tokenizer_component.get()
+
+        def _map(batch):
+            audio = batch["audio"]
+            batch["input_features"] = feature_extractor(
+                audio["array"], sampling_rate=audio["sampling_rate"]
+            ).input_features[0]
+
+            # Whisper-side label = ASR hypothesis (for teacher-forcing and aux loss)
+            batch["asr_hyp_labels"] = whisper_tokenizer(
+                batch[hyp_col]
+            ).input_ids
+
+            # Post-processor-side label = clean transcript (main loss target)
+            batch["clean_labels"] = byt5_tokenizer(
+                batch[clean_col],
+                truncation=True,
+                max_length=CONFIG.postprocessor.max_target_length,
+            ).input_ids
+
+            return batch
+
+        logger.info("Preparing joint dataset (features + dual labels)...")
+        keep_cols = {"input_features", "asr_hyp_labels", "clean_labels"}
+        all_cols = set(dataset["train"].column_names)
+        remove_cols = list(all_cols - keep_cols) if all_cols else None
+
+        prepared = dataset.map(_map, remove_columns=remove_cols)
+        logger.info("Joint dataset preparation complete")
+        return prepared
+
+    def prepare_parallel_text_dataset(
+        self,
+        dataset: DatasetDict,
+        byt5_tokenizer,
+        noisy_column: Optional[str] = None,
+        clean_column: Optional[str] = None,
+    ) -> DatasetDict:
+        """Prepare a plain text-to-text parallel dataset for Stage 1 post-proc pretraining.
+
+        Produces ``input_ids`` and ``labels`` columns suitable for a seq2seq
+        ``DataCollatorForSeq2Seq`` with the ByT5 tokenizer.
+        """
+        noisy_col = noisy_column or CONFIG.dataset.parallel_noisy_column
+        clean_col = clean_column or CONFIG.dataset.parallel_clean_column
+
+        def _map(batch):
+            src = byt5_tokenizer(
+                batch[noisy_col],
+                truncation=True,
+                max_length=CONFIG.postprocessor.max_target_length,
+            )
+            tgt = byt5_tokenizer(
+                batch[clean_col],
+                truncation=True,
+                max_length=CONFIG.postprocessor.max_target_length,
+            )
+            return {
+                "input_ids": src["input_ids"],
+                "attention_mask": src["attention_mask"],
+                "labels": tgt["input_ids"],
+            }
+
+        all_cols = set(dataset["train"].column_names)
+        keep = {"input_ids", "attention_mask", "labels"}
+        remove_cols = list(all_cols - keep)
+
+        logger.info("Preparing parallel text dataset for post-processor pretraining...")
+        return dataset.map(_map, remove_columns=remove_cols, batched=False)

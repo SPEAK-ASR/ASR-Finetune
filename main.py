@@ -24,6 +24,9 @@ from src.huggingface import HuggingFaceAuthenticator
 from src.data_loader import WhisperDataLoader
 from src.data_preprocessor import DataPreprocessor
 from src.asr_pipeline import WhisperASRPipeline
+from src.joint_pipeline import JointPipeline
+from src.stages.collect_pseudo_data import collect_pseudo_data
+from src.stages.pretrain_postproc import pretrain_postprocessor
 from src.config.wandb_config import WandbAuthenticator
 
 if IS_MAIN_PROCESS:
@@ -101,6 +104,59 @@ def _finetune_asr_model(token: str, dataset: DatasetDict) -> None:
         logger.info(f"{'=' * 40}")
 
 
+def _collect_pseudo_data(token: str, dataset: DatasetDict) -> None:
+    """Stage 0 task: run fine-tuned Whisper over the ASR dataset and push the
+    resulting (audio, asr_hyp_text, clean_text) corpus to the Hub."""
+    if IS_MAIN_PROCESS:
+        logger.info("Starting Stage 0: pseudo-data collection...")
+    collect_pseudo_data(
+        dataset=dataset,
+        push_to_hub_repo=CONFIG.dataset.pseudo_dataset_name,
+        token=token,
+    )
+
+
+def _pretrain_postproc(token: str) -> None:
+    """Stage 1 task: pretrain the post-processor on parallel + pseudo pairs."""
+    if IS_MAIN_PROCESS:
+        logger.info("Starting Stage 1: post-processor pretraining...")
+    pretrain_postprocessor(
+        push_to_hub_repo=CONFIG.postprocessor.hub_warmstart_repo,
+        token=token,
+    )
+
+
+def _finetune_joint_pipeline(token: str) -> None:
+    """Stage 2 task: joint fine-tuning of Whisper + post-processor via hidden-state
+    coupling. Uses the Stage-0 pseudo dataset (which has audio + ASR hyps + gold)."""
+    if IS_MAIN_PROCESS:
+        logger.info("Starting Stage 2: joint pipeline fine-tuning...")
+
+    loader = WhisperDataLoader()
+    pseudo_dataset = loader.load_pseudo_dataset()
+
+    pipeline = JointPipeline(
+        whisper_model_name=CONFIG.pipeline.whisper_warmstart_repo,
+        postproc_warmstart=CONFIG.postprocessor.warmstart_path
+        or CONFIG.postprocessor.hub_warmstart_repo,
+    )
+    pipeline.initialize()
+
+    prepared = pipeline.prepare_data(pseudo_dataset)
+
+    # Stage-0 dataset may only have a "train" split if built from a monolithic
+    # source. Carve out a held-out eval split.
+    if "test" not in prepared:
+        split = prepared["train"].train_test_split(test_size=0.02, seed=42)
+        prepared = DatasetDict(train=split["train"], test=split["test"])
+
+    results = pipeline.finetune(prepared)
+
+    if IS_MAIN_PROCESS:
+        logger.info(f"{'=' * 40}")
+        logger.info(f"Joint Training Results: {results}")
+        logger.info(f"{'=' * 40}")
+
 
 def main():
     """Main execution function - highly readable thanks to facade pattern."""
@@ -133,22 +189,30 @@ def main():
     if IS_MAIN_PROCESS:
         logger.info("Successfully initialized W&B")
     
-    # Load dataset(s)
-    dataset_names = [ds.dataset_name for ds in CONFIG.dataset.datasets]
-    if IS_MAIN_PROCESS:
-        logger.info(f"Loading {len(CONFIG.dataset.datasets)} dataset(s): {dataset_names}")
-    data_loader = WhisperDataLoader()
+    # Tasks that need the raw ASR dataset loaded upfront.
+    tasks_needing_asr_dataset = {
+        "prepare_dataset",
+        "finetune_asr_model",
+        "collect_pseudo_data",
+    }
 
-    dataset = data_loader.load_datasets()
-
-    if IS_MAIN_PROCESS:
-        logger.info(f"Dataset loaded successfully")
-        logger.info(f"Train samples: {len(dataset['train'])}")
-        logger.info(f"Test samples: {len(dataset['test'])}")
-        logger.info(f"Dataset structure: {dataset}")
-    
     if IS_MAIN_PROCESS:
         logger.info(f"Task selected: {CONFIG.runtime.task}")
+
+    dataset = None
+    if CONFIG.runtime.task in tasks_needing_asr_dataset:
+        dataset_names = [ds.dataset_name for ds in CONFIG.dataset.datasets]
+        if IS_MAIN_PROCESS:
+            logger.info(f"Loading {len(CONFIG.dataset.datasets)} dataset(s): {dataset_names}")
+        data_loader = WhisperDataLoader()
+        dataset = data_loader.load_datasets()
+
+        if IS_MAIN_PROCESS:
+            logger.info(f"Dataset loaded successfully")
+            logger.info(f"Train samples: {len(dataset['train'])}")
+            logger.info(f"Test samples: {len(dataset['test'])}")
+            logger.info(f"Dataset structure: {dataset}")
+
     if CONFIG.runtime.task == "prepare_dataset":
         _create_prepared_dataset(token, dataset)
         if IS_MAIN_PROCESS:
@@ -157,6 +221,18 @@ def main():
         _finetune_asr_model(token, dataset)
         if IS_MAIN_PROCESS:
             logger.info("Model fine-tuning task completed successfully")
+    elif CONFIG.runtime.task == "collect_pseudo_data":
+        _collect_pseudo_data(token, dataset)
+        if IS_MAIN_PROCESS:
+            logger.info("Pseudo-data collection task completed successfully")
+    elif CONFIG.runtime.task == "pretrain_postproc":
+        _pretrain_postproc(token)
+        if IS_MAIN_PROCESS:
+            logger.info("Post-processor pretraining task completed successfully")
+    elif CONFIG.runtime.task == "finetune_joint_pipeline":
+        _finetune_joint_pipeline(token)
+        if IS_MAIN_PROCESS:
+            logger.info("Joint pipeline fine-tuning task completed successfully")
     else:
         if IS_MAIN_PROCESS:
             logger.error(f"Unknown task: {CONFIG.runtime.task}")

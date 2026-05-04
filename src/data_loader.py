@@ -5,7 +5,7 @@ Supports combining multiple datasets into a single DatasetDict.
 """
 
 import os
-from datasets import load_dataset, DatasetDict, concatenate_datasets, disable_caching
+from datasets import load_dataset, DatasetDict, Dataset, concatenate_datasets, disable_caching
 from typing import Optional, List
 
 from src.utils.logger import setup_logger
@@ -120,3 +120,65 @@ class WhisperDataLoader:
             DatasetDict if loaded, None otherwise
         """
         return self.dataset
+
+    def load_parallel_text_dataset(
+        self,
+        dataset_name: Optional[str] = None,
+    ) -> Optional[DatasetDict]:
+        """Load the parallel noisy-text / clean-text corpus used in Stage 1.
+
+        The dataset is expected to expose ``noisy_text`` and ``clean_text`` columns
+        (configurable via ``CONFIG.dataset.parallel_noisy_column`` and
+        ``CONFIG.dataset.parallel_clean_column``).
+
+        Returns None if no parallel dataset is configured.
+        """
+        name = dataset_name or CONFIG.dataset.parallel_text_dataset
+        if name is None:
+            logger.info("No parallel text dataset configured - skipping")
+            return None
+
+        logger.info(f"Loading parallel text dataset '{name}'")
+        try:
+            ds = load_dataset(
+                name,
+                token=self.token,
+                cache_dir=CONFIG.paths.cache_dir,
+                keep_in_memory=CONFIG.dataset.keep_in_memory,
+            )
+        except Exception as e:
+            logger.error(f"Failed to load parallel text dataset '{name}': {e}")
+            raise
+
+        if isinstance(ds, Dataset):
+            ds = DatasetDict({"train": ds})
+
+        logger.info(f"Parallel text dataset loaded: { {k: len(v) for k, v in ds.items()} }")
+        return ds
+
+    def load_pseudo_dataset(
+        self,
+        dataset_name: Optional[str] = None,
+    ) -> DatasetDict:
+        """Load the Stage-0 pseudo dataset (audio + asr_hyp_text + clean_text).
+
+        Used both in Stage 1 (text-only) and Stage 2 (joint training).
+        """
+        name = dataset_name or CONFIG.dataset.pseudo_dataset_name
+        logger.info(f"Loading pseudo dataset '{name}'")
+        try:
+            ds = load_dataset(
+                name,
+                token=self.token,
+                cache_dir=CONFIG.paths.cache_dir,
+                keep_in_memory=CONFIG.dataset.keep_in_memory,
+            )
+        except Exception as e:
+            logger.error(f"Failed to load pseudo dataset '{name}': {e}")
+            raise
+
+        if isinstance(ds, Dataset):
+            ds = DatasetDict({"train": ds})
+
+        logger.info(f"Pseudo dataset loaded: { {k: len(v) for k, v in ds.items()} }")
+        return ds
